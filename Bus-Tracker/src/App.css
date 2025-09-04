@@ -1,5 +1,5 @@
 .background-container {
-  background-image: url("./assets/background1.avif");
+  background-image: url("./assets/background1.jpg");
   background-size: cover; /* Adjusts image to cover the container */
   background-position: center; /* Centers the image */
   background-repeat: no-repeat; /* Prevents tiling */
