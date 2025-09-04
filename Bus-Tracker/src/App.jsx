@@ -1,7 +1,20 @@
 import { useState } from "react";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import "./App.css";
+import UserPage from "./UserPage";
+import DriverPage from "./DriverPage";
 
 function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<LoginPage />} />
+      <Route path="/user" element={<UserPage />} />
+      <Route path="/driver" element={<DriverPage />} />
+    </Routes>
+  );
+}
+
+function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [userType, setUserType] = useState("passenger"); // "passenger" or "admin"
   const [showPassword, setShowPassword] = useState(false);
@@ -16,6 +29,7 @@ function App() {
     busNumber: "",
     experience: "",
   });
+  const navigate = useNavigate();
 
   const handleInputChange = (e) => {
     setFormData({
@@ -42,6 +56,14 @@ function App() {
 
     console.log(`${action} attempt for ${role}:`, formData);
     alert(`${action} successful for ${role}: ${formData.email}`);
+
+    if (isLogin) {
+      if (userType === "admin") {
+        navigate("/driver");
+      } else {
+        navigate("/user");
+      }
+    }
   };
 
   const resetForm = () => {
