@@ -1,0 +1,8 @@
+.background-container {
+  background-image: url("./assets/background1.avif");
+  background-size: cover; /* Adjusts image to cover the container */
+  background-position: center; /* Centers the image */
+  background-repeat: no-repeat; /* Prevents tiling */
+  height: 100vh; /* Full viewport height */
+  width: 100%; /* Full width */
+}
