@@ -1,8 +1,49 @@
 .user-page {
+  background-color: #d88b8b; /* pink background */
+  padding: 20px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 400px;
+  margin: 20px auto;
+  text-align: center;
+}
+
+.location-section,
+.busno-section {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  height: 100vh;
-  background-color: #f0f2f5;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 6px;
+  border: none;
+  outline: none;
+}
+
+button {
+  background-color: #fff;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.swap-icon {
+  cursor: pointer;
+  font-size: 18px;
+  padding: 5px 8px;
+  background: #fff;
+  border-radius: 50%;
+  user-select: none;
+}
+
+hr {
+  border: none;
+  border-top: 2px dashed #333;
+  margin: 20px 0;
 }
