@@ -12,8 +12,8 @@ import {
   Bell,
 } from "lucide-react";
 
-// Main App Component
-export default function App() {
+// Main DriverPage Component
+export default function DriverPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024);
   const [activeTab, setActiveTab] = useState("Journey");
   const [notification, setNotification] = useState(null);
@@ -61,10 +61,11 @@ export default function App() {
       />
 
       <motion.main
-        className="relative transition-all duration-300 ease-in-out"
+        className="relative" // Simplified className
         variants={mainContentVariants}
         animate={isSidebarOpen ? "open" : "closed"}
-        transition={{ type: "spring", stiffness: 100, damping: 20 }}
+        // CHANGED: Synced transition with the sidebar for a cohesive and smooth feel.
+        transition={{ ease: [0.32, 0.72, 0, 1], duration: 0.5 }}
       >
         <Header sidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
         <div className="p-4 sm:p-6 lg:p-8">
@@ -116,7 +117,8 @@ const Sidebar = ({
             animate="open"
             exit="closed"
             variants={sidebarVariants}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            // CHANGED: Replaced 'spring' with a custom 'ease' curve for a much smoother slide.
+            transition={{ ease: [0.32, 0.72, 0, 1], duration: 0.5 }}
             className="fixed top-0 left-0 h-full w-64 bg-slate-900 text-slate-100 p-6 flex flex-col shadow-2xl z-50"
           >
             <div className="flex items-center justify-between mb-10">
@@ -173,6 +175,7 @@ const Sidebar = ({
   );
 };
 
+// (The rest of the components remain unchanged as the fix is in the main layout animation.)
 // Header Component
 const Header = ({ sidebarToggle }) => (
   <header className="sticky top-0 bg-slate-50/80 backdrop-blur-md z-30 p-4 sm:p-6 flex justify-between items-center border-b border-slate-200">
