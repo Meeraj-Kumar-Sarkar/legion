@@ -1,14 +1,45 @@
 const mongoose = require('mongoose');
 
-const DriverSchema = new mongoose.Schema({
-  firstName:       { type: String, required: true },
-  lastName:        { type: String, required: true },
-  phone:           { type: String, required: true, unique: true },
-  email:           { type: String, required: true, unique: true },
-  password:        { type: String, required: true },
-  license:         { type: String, required: true },
-  yearsExperience: { type: Number, required: true }
-}, { timestamps: true });
+const driverSchema = new mongoose.Schema({
+  firstName: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  lastName: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  phone: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true
+  },
+  password: {
+    type: String,
+    required: true,
+    minlength: 6
+  },
+  license: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  yearsExperience: {
+    type: Number,
+    required: true,
+    min: 0
+  }
+}, {
+  timestamps: true
+});
 
-module.exports = mongoose.model('Driver', DriverSchema);
+module.exports = mongoose.model('Driver', driverSchema);
 

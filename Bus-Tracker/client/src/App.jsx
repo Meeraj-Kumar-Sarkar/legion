@@ -18,6 +18,7 @@ function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [userType, setUserType] = useState("passenger"); // "passenger" or "admin"
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -38,37 +39,85 @@ function LoginPage() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
     if (!formData.email || !formData.password) {
       alert("Please fill in all required fields!");
+      setLoading(false);
       return;
     }
 
     if (!isLogin && formData.password !== formData.confirmPassword) {
       alert("Passwords don't match!");
+      setLoading(false);
       return;
     }
 
-    const action = isLogin ? "Login" : "Registration";
-    const role = userType === "admin" ? "Bus Driver" : "Passenger";
-
-
-
-    console.log(`${action} attempt for ${role}:`, formData);
-    alert(`${action} successful for ${role}: ${formData.email}`);
-
-    if (isLogin) {
-      if (userType === "admin") {
-        navigate("/driver");
-      } else {
-        navigate("/user");
+    try {
+      const endpoint = userType === "admin" ? "/api/driver" : "/api/passenger";
+      const action = isLogin ? "login" : "signup";
+      
+      // Prepare data for API
+      const apiData = {
+        email: formData.email,
+        password: formData.password
+      };
+      
+      if (!isLogin) {
+        // Add registration fields
+        apiData.firstName = formData.firstName;
+        apiData.lastName = formData.lastName;
+        apiData.phone = formData.phone;
+        apiData.confirmPassword = formData.confirmPassword;
+        
+        if (userType === "admin") {
+          apiData.license = formData.licenseNumber;
+          apiData.yearsExperience = formData.experience;
+          // Note: busNumber is not in your backend model
+        }
       }
+
+      const response = await fetch(`http://localhost:5000${endpoint}/${action}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(apiData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Something went wrong");
+      }
+
+      // Save token to localStorage
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("userType", userType);
+      localStorage.setItem("userData", JSON.stringify(data.user));
+
+      alert(`${isLogin ? "Login" : "Registration"} successful!`);
+      
+      if (isLogin) {
+        if (userType === "admin") {
+          navigate("/driver");
+        } else {
+          navigate("/user");
+        }
+      } else {
+        // After successful registration, switch to login mode
+        setIsLogin(true);
+        resetForm();
+      }
+    } catch (error) {
+      console.error("API Error:", error);
+      alert(error.message || "An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
-
-
 
   const resetForm = () => {
     setFormData({
@@ -110,10 +159,9 @@ function LoginPage() {
           </p>
         </div>
 
-        {/* User Type Toggle - FIXED VERSION */}
+        {/* User Type Toggle */}
         <div className="mb-6">
           <div className="relative flex bg-gray-200 rounded-full p-1 max-w-sm mx-auto overflow-hidden">
-            {/* Sliding pill - Fixed positioning */}
             <div
               className={`absolute top-1 bottom-1 bg-white rounded-full shadow-lg transition-all duration-500 ease-out ${
                 userType === "passenger"
@@ -317,13 +365,14 @@ function LoginPage() {
           {/* Submit Button */}
           <button
             onClick={handleSubmit}
+            disabled={loading}
             className={`w-full py-3 px-4 rounded-lg font-medium text-white transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] ${
               userType === "admin"
                 ? "bg-blue-600 hover:bg-blue-700 shadow-blue-200"
                 : "bg-green-600 hover:bg-green-700 shadow-green-200"
-            } shadow-lg hover:shadow-xl`}
+            } shadow-lg hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed`}
           >
-            {isLogin ? "Sign In" : "Create Account"}
+            {loading ? "Processing..." : isLogin ? "Sign In" : "Create Account"}
           </button>
         </div>
 
