@@ -51,8 +51,45 @@ function LoginPage() {
       return;
     }
 
-    const action = isLogin ? "Login" : "Registration";
-    const role = userType === "admin" ? "Bus Driver" : "Passenger";
+   // const action = isLogin ? "Login" : "Registration";
+    //const role = userType === "admin" ? "Bus Driver" : "Passenger";
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  try {
+    if (isLogin) {
+      // 👉 LOGIN API
+      const endpoint =
+        userType === "admin"
+          ? "http://localhost:5000/api/driver/login"
+          : "http://localhost:5000/api/passenger/login";
+
+      const res = await axios.post(endpoint, {
+        email: formData.email,
+        password: formData.password,
+      });
+
+      alert("Login successful ✅");
+      console.log(res.data);
+
+    } else {
+      // 👉 SIGNUP API
+      const endpoint =
+        userType === "admin"
+          ? "http://localhost:5000/api/driver/signup"
+          : "http://localhost:5000/api/passenger/signup";
+
+      const res = await axios.post(endpoint, formData);
+
+      alert("Registration successful ✅");
+      console.log(res.data);
+    }
+  } catch (error) {
+    console.error(error);
+    alert("Something went wrong ❌");
+  }
+};
+
 
     console.log(`${action} attempt for ${role}:`, formData);
     alert(`${action} successful for ${role}: ${formData.email}`);
