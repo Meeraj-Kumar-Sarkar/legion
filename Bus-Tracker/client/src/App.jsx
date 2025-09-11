@@ -7,9 +7,9 @@ import DriverPage from "./DriverPage";
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<LoginPage />} />
-      <Route path="/user" element={<UserPage />} />
-      <Route path="/driver" element={<DriverPage />} />
+      <Route path="/App" element={<LoginPage />} />
+      <Route path="/App/user" element={<UserPage />} />
+      <Route path="/App/driver" element={<DriverPage />} />
     </Routes>
   );
 }
@@ -58,20 +58,20 @@ function LoginPage() {
     try {
       const endpoint = userType === "admin" ? "/api/driver" : "/api/passenger";
       const action = isLogin ? "login" : "signup";
-      
+
       // Prepare data for API
       const apiData = {
         email: formData.email,
-        password: formData.password
+        password: formData.password,
       };
-      
+
       if (!isLogin) {
         // Add registration fields
         apiData.firstName = formData.firstName;
         apiData.lastName = formData.lastName;
         apiData.phone = formData.phone;
         apiData.confirmPassword = formData.confirmPassword;
-        
+
         if (userType === "admin") {
           apiData.license = formData.licenseNumber;
           apiData.yearsExperience = formData.experience;
@@ -79,13 +79,16 @@ function LoginPage() {
         }
       }
 
-      const response = await fetch(`http://localhost:5000${endpoint}/${action}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(apiData),
-      });
+      const response = await fetch(
+        `http://localhost:5000${endpoint}/${action}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(apiData),
+        }
+      );
 
       const data = await response.json();
 
@@ -99,7 +102,7 @@ function LoginPage() {
       localStorage.setItem("userData", JSON.stringify(data.user));
 
       alert(`${isLogin ? "Login" : "Registration"} successful!`);
-      
+
       if (isLogin) {
         if (userType === "admin") {
           navigate("/driver");
@@ -146,6 +149,7 @@ function LoginPage() {
   return (
     <div className="min-h-screen background-container flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white/40 backdrop-blur-sm rounded-xl shadow-lg p-6">
+        {" "}
         {/* Header */}
         <div className="text-center mb-6">
           <div className="flex justify-center mb-4 text-4xl">
@@ -158,7 +162,6 @@ function LoginPage() {
             {userType === "admin" ? "Bus Driver Portal" : "Passenger Portal"}
           </p>
         </div>
-
         {/* User Type Toggle */}
         <div className="mb-6">
           <div className="relative flex bg-gray-200 rounded-full p-1 max-w-sm mx-auto overflow-hidden">
@@ -189,7 +192,6 @@ function LoginPage() {
             </button>
           </div>
         </div>
-
         {/* Form */}
         <div className="space-y-4">
           {/* Registration Fields */}
@@ -375,7 +377,6 @@ function LoginPage() {
             {loading ? "Processing..." : isLogin ? "Sign In" : "Create Account"}
           </button>
         </div>
-
         {/* Toggle Login/Register */}
         <div className="mt-6 text-center">
           <p className="text-gray-600">
@@ -392,7 +393,6 @@ function LoginPage() {
             </button>
           </p>
         </div>
-
         {/* Forgot Password */}
         {isLogin && (
           <div className="mt-4 text-center">
