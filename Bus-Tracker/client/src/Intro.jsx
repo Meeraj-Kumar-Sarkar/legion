@@ -1,5 +1,6 @@
 import { Routes, Route, useNavigate } from "react-router-dom";
 import App from "./App.jsx";
+import UserPage from "./UserPage.jsx";
 
 export default function EnterpriseHomePage() {
   const navigate = useNavigate();
@@ -35,15 +36,23 @@ export default function EnterpriseHomePage() {
             A unified platform for passengers and drivers — secure, efficient,
             and built for enterprise-level transport systems.
           </p>
-          <button
-            className="bg-white text-green-700 px-6 py-3 rounded-lg font-medium shadow-lg hover:scale-105 transition"
-            onClick={() => navigate("/App")}
-          >
-            Explore Services
-          </button>
+          <div className="flex space-x-4">
+            <button
+              className="bg-white text-green-700 px-6 py-3 rounded-lg font-medium shadow-lg hover:scale-105 transition"
+              onClick={() => navigate("/App/user")}
+            >
+              Search Bus
+            </button>
+            <button
+              className="bg-white text-green-700 px-6 py-3 rounded-lg font-medium shadow-lg hover:scale-105 transition"
+              onClick={() => navigate("/App")}
+            >
+              Login
+            </button>
+          </div>
         </div>
         <img
-          src="https://images.unsplash.com/photo-1506629082955-511b1aa562c8?q=80&w=1200"
+          src="https://images.unsplash.com/photo-1627163814192-97f2e2d76bac?q=80&w=1090&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
           alt="Bus illustration"
           className="mt-8 md:mt-0 rounded-xl shadow-2xl w-full md:w-1/2"
         />

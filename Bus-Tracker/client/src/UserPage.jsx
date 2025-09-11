@@ -69,7 +69,7 @@ export default function UserPage() {
       >
         <Header
           sidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-          userName="Jane Doe"
+          userName="User Name"
         />
         <div className="p-4 sm:p-6 lg:p-8">
           <DashboardContent
@@ -152,8 +152,8 @@ const Sidebar = ({
                   className="w-10 h-10 rounded-full"
                 />
                 <div>
-                  <p className="font-semibold text-white">Jane Doe</p>
-                  <p className="text-xs text-slate-400">Daily Commuter</p>
+                  <p className="font-semibold text-white">User Name</p>
+                  {/* <p className="text-xs text-slate-400">Daily Commuter</p> */}
                 </div>
               </div>
             </div>
