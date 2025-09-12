@@ -105,9 +105,9 @@ function LoginPage() {
 
       if (isLogin) {
         if (userType === "admin") {
-          navigate("/driver");
+          navigate("/App/driver");
         } else {
-          navigate("/user");
+          navigate("/App/user"); 
         }
       } else {
         // After successful registration, switch to login mode
