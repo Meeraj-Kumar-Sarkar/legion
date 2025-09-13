@@ -11,6 +11,14 @@ import {
   ArrowRight,
   Bell,
 } from "lucide-react";
+import { GoogleMap, useJsApiLoader, Marker } from "@react-google-maps/api";
+
+// require("dotenv").config();
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+// --- IMPORTANT ---
+// 1. Make sure you have installed the library: npm install @react-google-maps/api
+// 2. Replace the placeholder below with your actual Google Maps API Key.
 
 // Main DriverPage Component
 export default function DriverPage() {
@@ -64,7 +72,6 @@ export default function DriverPage() {
         className="relative" // Simplified className
         variants={mainContentVariants}
         animate={isSidebarOpen ? "open" : "closed"}
-        // CHANGED: Synced transition with the sidebar for a cohesive and smooth feel.
         transition={{ ease: [0.32, 0.72, 0, 1], duration: 0.5 }}
       >
         <Header sidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
@@ -117,7 +124,6 @@ const Sidebar = ({
             animate="open"
             exit="closed"
             variants={sidebarVariants}
-            // CHANGED: Replaced 'spring' with a custom 'ease' curve for a much smoother slide.
             transition={{ ease: [0.32, 0.72, 0, 1], duration: 0.5 }}
             className="fixed top-0 left-0 h-full w-64 bg-slate-900 text-slate-100 p-6 flex flex-col shadow-2xl z-50"
           >
@@ -164,7 +170,6 @@ const Sidebar = ({
           </motion.aside>
         )}
       </AnimatePresence>
-      {/* Backdrop for mobile */}
       {isOpen && (
         <div
           onClick={() => setIsOpen(false)}
@@ -175,7 +180,6 @@ const Sidebar = ({
   );
 };
 
-// (The rest of the components remain unchanged as the fix is in the main layout animation.)
 // Header Component
 const Header = ({ sidebarToggle }) => (
   <header className="sticky top-0 bg-slate-50/80 backdrop-blur-md z-30 p-4 sm:p-6 flex justify-between items-center border-b border-slate-200">
@@ -238,7 +242,7 @@ const DashboardContent = ({ activeTab, showNotification }) => {
 const JourneyView = ({ showNotification }) => (
   <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
     <div className="xl:col-span-3">
-      <MapPlaceholder />
+      <MapView />
     </div>
     <div className="xl:col-span-2">
       <JourneyForm showNotification={showNotification} />
@@ -246,25 +250,183 @@ const JourneyView = ({ showNotification }) => (
   </div>
 );
 
-// Map Placeholder Component
-const MapPlaceholder = () => (
-  <motion.div
-    className="bg-slate-800 p-4 rounded-xl shadow-lg h-96 xl:h-full flex flex-col justify-between"
-    initial={{ opacity: 0, scale: 0.95 }}
-    animate={{ opacity: 1, scale: 1 }}
-    transition={{ delay: 0.1, duration: 0.5 }}
-  >
-    <div className="flex justify-between items-center">
-      <h3 className="font-bold text-white">Live Map View</h3>
-      <span className="text-xs font-medium bg-green-500/20 text-green-300 px-2 py-1 rounded-full">
-        ● Live
-      </span>
-    </div>
-    <div className="flex-grow flex items-center justify-center">
-      <p className="text-slate-400 text-lg">[ Interactive Map Placeholder ]</p>
-    </div>
-  </motion.div>
-);
+// Map View Component (Replaces MapPlaceholder)
+const MapView = () => {
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+  });
+
+  const containerStyle = {
+    width: "100%",
+    height: "100%",
+  };
+
+  // Centered on Kolkata, India
+  const [center, setCenter] = useState({ lat: 22.5726, lng: 88.3639 }); // default Kolkata
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setCenter({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        () => {
+          // keep default if user denies or error occurs
+          setCenter({ lat: 22.5726, lng: 88.3639 });
+        },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      );
+    }
+  }, []);
+
+  /**
+   * 
+   *     navigator.geolocation.getCurrentPosition(
+        function(position) {
+            // Success callback: position object contains location data
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            console.log("Latitude:", latitude, "Longitude:", longitude);
+        },
+        function(error) {
+            // Error callback: handles cases where location cannot be retrieved
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    console.error("User denied the request for Geolocation.");
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    console.error("Location information is unavailable.");
+                    break;
+                case error.TIMEOUT:
+                    console.error("The request to get user location timed out.");
+                    break;
+                case error.UNKNOWN_ERROR:
+                    console.error("An unknown error occurred.");
+                    break;
+            }
+        },
+        {
+            enableHighAccuracy: true, // Request the most accurate location
+            timeout: 5000,           // Maximum time in ms to wait for a position
+            maximumAge: 0            // Don't use a cached position
+        }
+    );
+   */
+
+  // Custom map styles for a dark theme to match the container
+  const mapStyles = [
+    { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+    { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+    { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+    {
+      featureType: "administrative.locality",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#d59563" }],
+    },
+    {
+      featureType: "poi",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#d59563" }],
+    },
+    {
+      featureType: "poi.park",
+      elementType: "geometry",
+      stylers: [{ color: "#263c3f" }],
+    },
+    {
+      featureType: "poi.park",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#6b9a76" }],
+    },
+    {
+      featureType: "road",
+      elementType: "geometry",
+      stylers: [{ color: "#38414e" }],
+    },
+    {
+      featureType: "road",
+      elementType: "geometry.stroke",
+      stylers: [{ color: "#212a37" }],
+    },
+    {
+      featureType: "road",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#9ca5b3" }],
+    },
+    {
+      featureType: "road.highway",
+      elementType: "geometry",
+      stylers: [{ color: "#746855" }],
+    },
+    {
+      featureType: "road.highway",
+      elementType: "geometry.stroke",
+      stylers: [{ color: "#1f2835" }],
+    },
+    {
+      featureType: "road.highway",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#f3d19c" }],
+    },
+    {
+      featureType: "transit",
+      elementType: "geometry",
+      stylers: [{ color: "#2f3948" }],
+    },
+    {
+      featureType: "transit.station",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#d59563" }],
+    },
+    {
+      featureType: "water",
+      elementType: "geometry",
+      stylers: [{ color: "#17263c" }],
+    },
+    {
+      featureType: "water",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#515c6d" }],
+    },
+    {
+      featureType: "water",
+      elementType: "labels.text.stroke",
+      stylers: [{ color: "#17263c" }],
+    },
+  ];
+
+  return (
+    <motion.div
+      className="bg-slate-800 p-1 rounded-xl shadow-lg h-96 xl:h-full overflow-hidden"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: 0.1, duration: 0.5 }}
+    >
+      {isLoaded ? (
+        <GoogleMap
+          mapContainerStyle={containerStyle}
+          center={center}
+          zoom={12}
+          options={{
+            styles: mapStyles,
+            disableDefaultUI: true,
+            zoomControl: true,
+          }}
+        >
+          <Marker position={center} />
+        </GoogleMap>
+      ) : (
+        <div className="flex items-center justify-center h-full">
+          <p className="text-slate-400">Loading Map...</p>
+        </div>
+      )}
+    </motion.div>
+  );
+};
 
 // Journey Form Component
 const JourneyForm = ({ showNotification }) => (
