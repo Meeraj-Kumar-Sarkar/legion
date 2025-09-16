@@ -20,6 +20,7 @@ export default function UserPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024);
   const [activeTab, setActiveTab] = useState("Journey");
   const [notification, setNotification] = useState(null);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -29,6 +30,10 @@ export default function UserPage() {
         setIsSidebarOpen(true);
       }
     };
+    const savedUser = localStorage.getItem("userData");
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -59,6 +64,7 @@ export default function UserPage() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         showNotification={showNotification}
+        user={user}
       />
       <motion.main
         className="relative" // Simplified className
@@ -69,7 +75,7 @@ export default function UserPage() {
       >
         <Header
           sidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-          userName="User Name"
+          userName={user ? `${user.firstName}` : "Guest"}
         />
         <div className="p-4 sm:p-6 lg:p-8">
           <DashboardContent
@@ -90,6 +96,7 @@ const Sidebar = ({
   activeTab,
   setActiveTab,
   showNotification,
+  user,
 }) => {
   const sidebarVariants = {
     open: { x: 0 },
@@ -119,7 +126,7 @@ const Sidebar = ({
           >
             <div className="flex items-center justify-between mb-10">
               <h1 className="text-2xl font-bold text-white tracking-wider">
-                CommuteApp
+                BUZZ
               </h1>
               <button
                 onClick={() => setIsOpen(false)}
@@ -147,12 +154,16 @@ const Sidebar = ({
             <div className="mt-auto">
               <div className="flex items-center space-x-3 p-3 bg-slate-800 rounded-lg">
                 <img
-                  src="https://placehold.co/40x40/a78bfa/ffffff?text=U"
+                  src={`https://placehold.co/40x40/a78bfa/ffffff?text=${
+                    user ? user.firstName[0] : "G"
+                  }`}
                   alt="User Avatar"
                   className="w-10 h-10 rounded-full"
                 />
                 <div>
-                  <p className="font-semibold text-white">User Name</p>
+                  <p className="font-semibold text-white">
+                    {user ? `${user.firstName} ${user.lastName}` : "Guest"}
+                  </p>
                   {/* <p className="text-xs text-slate-400">Daily Commuter</p> */}
                 </div>
               </div>

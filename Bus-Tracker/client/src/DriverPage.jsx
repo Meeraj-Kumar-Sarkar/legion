@@ -13,12 +13,8 @@ import {
 } from "lucide-react";
 import { GoogleMap, useJsApiLoader, Marker } from "@react-google-maps/api";
 
-// require("dotenv").config();
+// Get API key from environment variables
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-
-// --- IMPORTANT ---
-// 1. Make sure you have installed the library: npm install @react-google-maps/api
-// 2. Replace the placeholder below with your actual Google Maps API Key.
 
 // Main DriverPage Component
 export default function DriverPage() {
@@ -69,7 +65,7 @@ export default function DriverPage() {
       />
 
       <motion.main
-        className="relative" // Simplified className
+        className="relative"
         variants={mainContentVariants}
         animate={isSidebarOpen ? "open" : "closed"}
         transition={{ ease: [0.32, 0.72, 0, 1], duration: 0.5 }}
@@ -115,6 +111,9 @@ const Sidebar = ({
     }
   };
 
+  // Mock user data - replace with actual user data
+  const user = { firstName: "John", lastName: "Doe" };
+
   return (
     <>
       <AnimatePresence>
@@ -129,7 +128,7 @@ const Sidebar = ({
           >
             <div className="flex items-center justify-between mb-10">
               <h1 className="text-2xl font-bold text-white tracking-wider">
-                DriverHub
+                BUZZ
               </h1>
               <button
                 onClick={() => setIsOpen(false)}
@@ -144,7 +143,7 @@ const Sidebar = ({
                   key={item.name}
                   className={`flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
                     activeTab === item.name
-                      ? "bg-indigo-600 text-white shadow-lg"
+                      ? "bg-blue-500 text-white shadow-lg"
                       : "hover:bg-slate-700/50"
                   }`}
                   onClick={() => handleTabClick(item.name)}
@@ -157,12 +156,14 @@ const Sidebar = ({
             <div className="mt-auto">
               <div className="flex items-center space-x-3 p-3 bg-slate-800 rounded-lg">
                 <img
-                  src="https://placehold.co/40x40/6366f1/ffffff?text=U"
+                  src={`https://placehold.co/40x40/1447e6/ffffff?text=${user.firstName[0]}`}
                   alt="User Avatar"
                   className="w-10 h-10 rounded-full"
                 />
                 <div>
-                  <p className="font-semibold text-white">John Doe</p>
+                  <p className="font-semibold text-white">
+                    {user.firstName} {user.lastName}
+                  </p>
                   <p className="text-xs text-slate-400">Expert Driver</p>
                 </div>
               </div>
@@ -181,32 +182,39 @@ const Sidebar = ({
 };
 
 // Header Component
-const Header = ({ sidebarToggle }) => (
-  <header className="sticky top-0 bg-slate-50/80 backdrop-blur-md z-30 p-4 sm:p-6 flex justify-between items-center border-b border-slate-200">
-    <div className="flex items-center gap-4">
-      <button
-        onClick={sidebarToggle}
-        className="p-2 rounded-full hover:bg-slate-200 transition-colors"
-      >
-        <Menu size={24} />
-      </button>
-      <h2 className="text-xl md:text-2xl font-bold text-slate-800">
-        Driver Dashboard
-      </h2>
-    </div>
-    <div className="flex items-center space-x-4">
-      <button className="p-2 rounded-full hover:bg-slate-200 transition-colors relative">
-        <Bell size={22} />
-        <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-slate-50"></span>
-      </button>
-      <div className="w-px h-6 bg-slate-300 hidden sm:block"></div>
-      <div className="hidden sm:flex items-center space-x-2">
-        <span className="font-semibold text-slate-600">John Doe</span>
-        <User size={22} className="text-slate-500" />
+const Header = ({ sidebarToggle }) => {
+  // Mock user data - replace with actual user data
+  const user = { firstName: "John", lastName: "Doe" };
+
+  return (
+    <header className="sticky top-0 bg-slate-50/80 backdrop-blur-md z-30 p-4 sm:p-6 flex justify-between items-center border-b border-slate-200">
+      <div className="flex items-center gap-4">
+        <button
+          onClick={sidebarToggle}
+          className="p-2 rounded-full hover:bg-slate-200 transition-colors"
+        >
+          <Menu size={24} />
+        </button>
+        <h2 className="text-xl md:text-2xl font-bold text-slate-800">
+          Driver Dashboard
+        </h2>
       </div>
-    </div>
-  </header>
-);
+      <div className="flex items-center space-x-4">
+        <button className="p-2 rounded-full hover:bg-slate-200 transition-colors relative">
+          <Bell size={22} />
+          <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-slate-50"></span>
+        </button>
+        <div className="w-px h-6 bg-slate-300 hidden sm:block"></div>
+        <div className="hidden sm:flex items-center space-x-2">
+          <span className="font-semibold text-slate-600">
+            {user.firstName} {user.lastName}
+          </span>
+          <User size={22} className="text-slate-500" />
+        </div>
+      </div>
+    </header>
+  );
+};
 
 // Content Area
 const DashboardContent = ({ activeTab, showNotification }) => {
@@ -250,21 +258,19 @@ const JourneyView = ({ showNotification }) => (
   </div>
 );
 
-// Map View Component (Replaces MapPlaceholder)
+// Enhanced Map View Component with better error handling
 const MapView = () => {
-  const { isLoaded } = useJsApiLoader({
+  const [center, setCenter] = useState({ lat: 22.5726, lng: 88.3639 }); // Default to Kolkata
+  const [mapError, setMapError] = useState(null);
+
+  // Load Google Maps with error handling
+  const { isLoaded, loadError } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+    version: "weekly", // Specify version
   });
 
-  const containerStyle = {
-    width: "100%",
-    height: "100%",
-  };
-
-  // Centered on Kolkata, India
-  const [center, setCenter] = useState({ lat: 22.5726, lng: 88.3639 }); // default Kolkata
-
+  // Get user's current location
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -274,130 +280,144 @@ const MapView = () => {
             lng: position.coords.longitude,
           });
         },
-        () => {
-          // keep default if user denies or error occurs
-          setCenter({ lat: 22.5726, lng: 88.3639 });
+        (error) => {
+          console.warn("Geolocation error:", error.message);
+          // Keep default location if geolocation fails
         },
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000, // 5 minutes
+        }
       );
     }
   }, []);
 
-  /**
-   * 
-   *     navigator.geolocation.getCurrentPosition(
-        function(position) {
-            // Success callback: position object contains location data
-            const latitude = position.coords.latitude;
-            const longitude = position.coords.longitude;
-            console.log("Latitude:", latitude, "Longitude:", longitude);
-        },
-        function(error) {
-            // Error callback: handles cases where location cannot be retrieved
-            switch(error.code) {
-                case error.PERMISSION_DENIED:
-                    console.error("User denied the request for Geolocation.");
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    console.error("Location information is unavailable.");
-                    break;
-                case error.TIMEOUT:
-                    console.error("The request to get user location timed out.");
-                    break;
-                case error.UNKNOWN_ERROR:
-                    console.error("An unknown error occurred.");
-                    break;
-            }
-        },
-        {
-            enableHighAccuracy: true, // Request the most accurate location
-            timeout: 5000,           // Maximum time in ms to wait for a position
-            maximumAge: 0            // Don't use a cached position
-        }
-    );
-   */
+  const containerStyle = {
+    width: "100%",
+    height: "100%",
+    borderRadius: "0.75rem", // Match the rounded-xl class
+  };
 
-  // Custom map styles for a dark theme to match the container
-  const mapStyles = [
-    { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-    { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-    { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-    {
-      featureType: "administrative.locality",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#d59563" }],
-    },
-    {
-      featureType: "poi",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#d59563" }],
-    },
-    {
-      featureType: "poi.park",
-      elementType: "geometry",
-      stylers: [{ color: "#263c3f" }],
-    },
-    {
-      featureType: "poi.park",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#6b9a76" }],
-    },
-    {
-      featureType: "road",
-      elementType: "geometry",
-      stylers: [{ color: "#38414e" }],
-    },
-    {
-      featureType: "road",
-      elementType: "geometry.stroke",
-      stylers: [{ color: "#212a37" }],
-    },
-    {
-      featureType: "road",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#9ca5b3" }],
-    },
-    {
-      featureType: "road.highway",
-      elementType: "geometry",
-      stylers: [{ color: "#746855" }],
-    },
-    {
-      featureType: "road.highway",
-      elementType: "geometry.stroke",
-      stylers: [{ color: "#1f2835" }],
-    },
-    {
-      featureType: "road.highway",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#f3d19c" }],
-    },
-    {
-      featureType: "transit",
-      elementType: "geometry",
-      stylers: [{ color: "#2f3948" }],
-    },
-    {
-      featureType: "transit.station",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#d59563" }],
-    },
-    {
-      featureType: "water",
-      elementType: "geometry",
-      stylers: [{ color: "#17263c" }],
-    },
-    {
-      featureType: "water",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#515c6d" }],
-    },
-    {
-      featureType: "water",
-      elementType: "labels.text.stroke",
-      stylers: [{ color: "#17263c" }],
-    },
-  ];
+  // Map options
+  const mapOptions = {
+    disableDefaultUI: true,
+    zoomControl: true,
+    mapTypeControl: false,
+    scaleControl: false,
+    streetViewControl: false,
+    rotateControl: false,
+    fullscreenControl: false,
+    gestureHandling: "greedy",
+    styles: [
+      { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+      { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+      { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+      {
+        featureType: "administrative.locality",
+        elementType: "labels.text.fill",
+        stylers: [{ color: "#d59563" }],
+      },
+      {
+        featureType: "poi",
+        elementType: "labels.text.fill",
+        stylers: [{ color: "#d59563" }],
+      },
+      {
+        featureType: "poi.park",
+        elementType: "geometry",
+        stylers: [{ color: "#263c3f" }],
+      },
+      {
+        featureType: "poi.park",
+        elementType: "labels.text.fill",
+        stylers: [{ color: "#6b9a76" }],
+      },
+      {
+        featureType: "road",
+        elementType: "geometry",
+        stylers: [{ color: "#38414e" }],
+      },
+      {
+        featureType: "road",
+        elementType: "geometry.stroke",
+        stylers: [{ color: "#212a37" }],
+      },
+      {
+        featureType: "road",
+        elementType: "labels.text.fill",
+        stylers: [{ color: "#9ca5b3" }],
+      },
+      {
+        featureType: "road.highway",
+        elementType: "geometry",
+        stylers: [{ color: "#746855" }],
+      },
+      {
+        featureType: "road.highway",
+        elementType: "geometry.stroke",
+        stylers: [{ color: "#1f2835" }],
+      },
+      {
+        featureType: "road.highway",
+        elementType: "labels.text.fill",
+        stylers: [{ color: "#f3d19c" }],
+      },
+      {
+        featureType: "transit",
+        elementType: "geometry",
+        stylers: [{ color: "#2f3948" }],
+      },
+      {
+        featureType: "transit.station",
+        elementType: "labels.text.fill",
+        stylers: [{ color: "#d59563" }],
+      },
+      {
+        featureType: "water",
+        elementType: "geometry",
+        stylers: [{ color: "#17263c" }],
+      },
+      {
+        featureType: "water",
+        elementType: "labels.text.fill",
+        stylers: [{ color: "#515c6d" }],
+      },
+      {
+        featureType: "water",
+        elementType: "labels.text.stroke",
+        stylers: [{ color: "#17263c" }],
+      },
+    ],
+  };
+
+  // Handle loading error
+  if (loadError) {
+    return (
+      <motion.div
+        className="bg-slate-800 p-6 rounded-xl shadow-lg h-96 xl:h-full flex flex-col items-center justify-center"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.1, duration: 0.5 }}
+      >
+        <div className="text-center">
+          <p className="text-red-400 font-semibold mb-2">
+            Failed to load Google Maps
+          </p>
+          <p className="text-slate-400 text-sm">
+            {GOOGLE_MAPS_API_KEY
+              ? "Check your API key configuration and billing settings"
+              : "Google Maps API key is missing"}
+          </p>
+          {!GOOGLE_MAPS_API_KEY && (
+            <p className="text-yellow-400 text-xs mt-2">
+              Add VITE_GOOGLE_MAPS_API_KEY to your .env file
+            </p>
+          )}
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -411,17 +431,42 @@ const MapView = () => {
           mapContainerStyle={containerStyle}
           center={center}
           zoom={12}
-          options={{
-            styles: mapStyles,
-            disableDefaultUI: true,
-            zoomControl: true,
+          options={mapOptions}
+          onLoad={(map) => {
+            console.log("Map loaded successfully");
+          }}
+          onError={(error) => {
+            console.error("Map error:", error);
+            setMapError("Map failed to initialize");
           }}
         >
-          <Marker position={center} />
+          <Marker
+            position={center}
+            title="Current Location"
+            options={{
+              icon: {
+                path: window.google?.maps?.SymbolPath?.CIRCLE,
+                scale: 8,
+                fillColor: "#3B82F6",
+                fillOpacity: 1,
+                strokeColor: "#ffffff",
+                strokeWeight: 2,
+              },
+            }}
+          />
         </GoogleMap>
       ) : (
         <div className="flex items-center justify-center h-full">
-          <p className="text-slate-400">Loading Map...</p>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+            <p className="text-slate-400">Loading Map...</p>
+          </div>
+        </div>
+      )}
+
+      {mapError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-800/90 rounded-xl">
+          <p className="text-red-400">{mapError}</p>
         </div>
       )}
     </motion.div>
@@ -438,8 +483,8 @@ const JourneyForm = ({ showNotification }) => (
   >
     <div className="space-y-6">
       <div className="flex items-center space-x-3">
-        <div className="bg-indigo-100 p-2 rounded-lg">
-          <Bus className="text-indigo-600" size={24} />
+        <div className="bg-blue-500 p-2 rounded-lg">
+          <Bus className="text-white" size={24} />
         </div>
         <h3 className="text-xl font-bold">Plan Your Journey</h3>
       </div>
@@ -451,7 +496,7 @@ const JourneyForm = ({ showNotification }) => (
         <input
           type="text"
           defaultValue="215A"
-          className="mt-1 w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-slate-50"
+          className="mt-1 w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-slate-50"
         />
       </label>
       <label className="block">
@@ -459,7 +504,7 @@ const JourneyForm = ({ showNotification }) => (
         <input
           type="text"
           placeholder="e.g., Central Station"
-          className="mt-1 w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+          className="mt-1 w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
         />
       </label>
       <label className="block">
@@ -467,13 +512,13 @@ const JourneyForm = ({ showNotification }) => (
         <input
           type="text"
           placeholder="e.g., Tech Park"
-          className="mt-1 w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+          className="mt-1 w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
         />
       </label>
       <motion.button
         whileHover={{ scale: 1.02, y: -2 }}
         whileTap={{ scale: 0.98 }}
-        className="w-full flex items-center justify-center py-3 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg"
+        className="w-full flex items-center justify-center py-3 px-4 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-all duration-200 shadow-md hover:shadow-lg"
         onClick={() => showNotification("Your journey has started!")}
       >
         Start Journey <ArrowRight size={20} className="ml-2" />
@@ -500,7 +545,7 @@ const Notification = ({ message }) => (
         exit={{ opacity: 0, y: 20, scale: 0.9 }}
         className="fixed bottom-5 right-5 z-50 bg-slate-900 text-white px-6 py-3 rounded-lg shadow-2xl flex items-center space-x-3"
       >
-        <Bell size={20} className="text-indigo-400" />
+        <Bell size={20} className="text-blue-500" />
         <p className="font-medium">{message}</p>
       </motion.div>
     )}

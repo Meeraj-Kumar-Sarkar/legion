@@ -20,15 +20,13 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
 
-    // check unique email/phone
-    const exists = await Passenger.findOne({ $or: [{ email }, { phone }] });
+    const exists = await Passenger.findOne({ $or: [{ email: email.toLowerCase() }, { phone }] });
     if (exists) return res.status(400).json({ error: 'Passenger with this email or phone already exists' });
 
     const hashed = await bcrypt.hash(password, 10);
-    const passenger = new Passenger({ firstName, lastName, phone, email, password: hashed });
+    const passenger = new Passenger({ firstName, lastName, phone, email: email.toLowerCase(), password: hashed });
     await passenger.save();
 
-    // optional: return token so frontend can auto-login after signup
     const token = jwt.sign({ id: passenger._id, role: 'passenger' }, JWT_SECRET, { expiresIn: '7d' });
 
     res.status(201).json({
@@ -37,7 +35,13 @@ router.post('/signup', async (req, res) => {
       user: { id: passenger._id, firstName, lastName, phone, email }
     });
   } catch (err) {
-    console.error(err);
+    if (err.code === 11000) {
+      return res.status(400).json({ error: 'Email or phone already exists' });
+    }
+    if (err.name === 'MongoNetworkError' || err.name === 'MongooseServerSelectionError') {
+      return res.status(503).json({ error: 'Database connection error' });
+    }
+    console.error('Error in /signup:', err.message, err.stack);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -46,18 +50,34 @@ router.post('/signup', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
 
-    const passenger = await Passenger.findOne({ email });
-    if (!passenger) return res.status(400).json({ error: 'Passenger not found' });
+    const passenger = await Passenger.findOne({ email: email.toLowerCase() });
+    if (!passenger) {
+      return res.status(400).json({ error: 'Passenger not found' });
+    }
 
     const isMatch = await bcrypt.compare(password, passenger.password);
-    if (!isMatch) return res.status(400).json({ error: 'Invalid credentials' });
+    if (!isMatch) {
+      return res.status(400).json({ error: 'Invalid credentials' });
+    }
 
     const token = jwt.sign({ id: passenger._id, role: 'passenger' }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ message: 'Login successful', token, user: { id: passenger._id, firstName: passenger.firstName, email: passenger.email } });
+    res.json({
+      message: 'Login successful',
+      token,
+      user: {
+        id: passenger._id,
+        firstName: passenger.firstName,
+        lastName: passenger.lastName,
+        phone: passenger.phone,
+        email: passenger.email
+      }
+    });
   } catch (err) {
-    console.error(err);
+    console.error('Error in /login:', err.message, err.stack);
     res.status(500).json({ error: 'Server error' });
   }
 });
