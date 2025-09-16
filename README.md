@@ -1,3 +1,1 @@
-`"Initial Commit" 
-hello
-hi
+# Everything is in dumpster fire
