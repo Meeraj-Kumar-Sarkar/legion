@@ -11,6 +11,9 @@ import {
   Bell,
 } from "lucide-react";
 
+// Mock Google Maps API Key - replace with your actual key
+const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
 // Main DriverPage Component
 export default function DriverPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -232,48 +235,178 @@ const JourneyView = ({ showNotification }) => (
   </div>
 );
 
-// Simplified Map View Component (without Google Maps dependency)
+// Working Map Component
 const MapView = () => {
-  const [center, setCenter] = useState({ lat: 22.5726, lng: 88.3639 });
+  const [map, setMap] = useState(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setCenter({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-        },
-        (error) => {
-          console.warn("Geolocation error:", error.message);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 300000,
-        }
-      );
+    // Load Google Maps API
+    if (!window.google) {
+      const script = document.createElement("script");
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=marker`;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        setMapLoaded(true);
+      };
+      script.onerror = () => {
+        console.error("Failed to load Google Maps API");
+      };
+      document.head.appendChild(script);
+    } else {
+      setMapLoaded(true);
     }
   }, []);
 
-  return (
-    <div className="bg-slate-800 p-1 rounded-xl shadow-lg h-96 xl:h-full overflow-hidden opacity-0 animate-fadeIn">
-      <div className="w-full h-full bg-gradient-to-br from-slate-700 to-slate-900 rounded-xl flex items-center justify-center relative">
-        {/* Mock map interface */}
-        <div className="absolute inset-4 bg-slate-600 rounded-lg opacity-20"></div>
-        <div className="text-center z-10">
-          <MapPin className="text-blue-400 mx-auto mb-2" size={48} />
-          <p className="text-white font-semibold">Interactive Map</p>
-          <p className="text-slate-400 text-sm mt-1">
-            Location: {center.lat.toFixed(4)}, {center.lng.toFixed(4)}
+  useEffect(() => {
+    if (mapLoaded && window.google) {
+      initializeMap();
+    }
+  }, [mapLoaded]);
+
+  const initializeMap = async () => {
+    try {
+      // Center on Kolkata
+      const center = { lat: 22.5726, lng: 88.3639 };
+
+      // Create the map
+      const mapInstance = new window.google.maps.Map(
+        document.getElementById("map"),
+        {
+          zoom: 14,
+          center: center,
+          mapId: "8d46261853eb87145a5d0cb9",
+          disableDefaultUI: false,
+          styles: [
+            {
+              featureType: "poi",
+              elementType: "labels",
+              stylers: [{ visibility: "off" }],
+            },
+          ],
+        }
+      );
+
+      setMap(mapInstance);
+
+      // Add bus markers
+      const busMarkers = [
+        {
+          coordinates: { lat: 22.576, lng: 88.365 },
+          text: "Route 215A",
+          color: "#2196F3",
+        },
+        {
+          coordinates: { lat: 22.568, lng: 88.36 },
+          text: "Route S-7",
+          color: "#4CAF50",
+        },
+        {
+          coordinates: { lat: 22.58, lng: 88.37 },
+          text: "Route AC-9",
+          color: "#FF9800",
+        },
+      ];
+
+      // Add markers to map
+      busMarkers.forEach((busData, index) => {
+        // Create a custom marker element
+        const markerElement = document.createElement("div");
+        markerElement.style.cssText = `
+          background: ${busData.color};
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-weight: bold;
+          font-size: 12px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          border: 2px solid white;
+          cursor: pointer;
+          position: relative;
+        `;
+        markerElement.innerHTML = "🚌";
+
+        // Create info window content
+        const infoContent = document.createElement("div");
+        infoContent.style.cssText = `
+          background: ${busData.color};
+          color: white;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 11px;
+          font-weight: 600;
+          margin-top: 2px;
+          text-align: center;
+          white-space: nowrap;
+        `;
+        infoContent.textContent = busData.text;
+
+        const container = document.createElement("div");
+        container.appendChild(markerElement);
+        container.appendChild(infoContent);
+
+        // Try to use AdvancedMarkerElement if available
+        if (
+          window.google.maps.marker &&
+          window.google.maps.marker.AdvancedMarkerElement
+        ) {
+          new window.google.maps.marker.AdvancedMarkerElement({
+            map: mapInstance,
+            position: busData.coordinates,
+            content: container,
+          });
+        } else {
+          // Fallback to regular marker
+          const marker = new window.google.maps.Marker({
+            position: busData.coordinates,
+            map: mapInstance,
+            title: busData.text,
+            icon: {
+              path: window.google.maps.SymbolPath.CIRCLE,
+              scale: 20,
+              fillColor: busData.color,
+              fillOpacity: 1,
+              strokeWeight: 2,
+              strokeColor: "#ffffff",
+            },
+          });
+
+          const infoWindow = new window.google.maps.InfoWindow({
+            content: `<div style="padding: 8px; font-weight: bold;">${busData.text}</div>`,
+          });
+
+          marker.addListener("click", () => {
+            infoWindow.open(mapInstance, marker);
+          });
+        }
+      });
+    } catch (error) {
+      console.error("Error initializing map:", error);
+    }
+  };
+
+  if (!mapLoaded) {
+    return (
+      <div className="bg-white rounded-xl shadow-lg h-96 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading Map...</p>
+          <p className="text-xs text-slate-400 mt-2">
+            Please add your Google Maps API key
           </p>
-          <div className="mt-4">
-            <div className="w-3 h-3 bg-blue-500 rounded-full mx-auto animate-pulse"></div>
-            <p className="text-xs text-slate-300 mt-1">Current Location</p>
-          </div>
         </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden h-96">
+      <div id="map" className="w-full h-full"></div>
     </div>
   );
 };
@@ -295,7 +428,7 @@ const JourneyForm = ({ showNotification }) => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-lg h-full opacity-0 animate-fadeIn">
+    <div className="bg-white p-6 rounded-xl shadow-lg h-96 opacity-0 animate-fadeIn">
       <div className="space-y-6">
         <div className="flex items-center space-x-3">
           <div className="bg-blue-500 p-2 rounded-lg">
@@ -321,7 +454,7 @@ const JourneyForm = ({ showNotification }) => {
           </span>
           <input
             type="text"
-            placeholder="e.g., Central Station"
+            placeholder="e.g., Howrah Station"
             value={startPoint}
             onChange={(e) => setStartPoint(e.target.value)}
             className="mt-1 w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
@@ -331,7 +464,7 @@ const JourneyForm = ({ showNotification }) => {
           <span className="text-slate-600 font-medium text-sm">End Point</span>
           <input
             type="text"
-            placeholder="e.g., Tech Park"
+            placeholder="e.g., Salt Lake Sector V"
             value={endPoint}
             onChange={(e) => setEndPoint(e.target.value)}
             className="mt-1 w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
@@ -365,7 +498,7 @@ const Notification = ({ message }) => (
         <p className="font-medium">{message}</p>
       </div>
     )}
-    <style jsx>{`
+    <style jsx="true">{`
       @keyframes fadeIn {
         from {
           opacity: 0;
