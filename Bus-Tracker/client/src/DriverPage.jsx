@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 import {
   Menu,
   X,
@@ -11,8 +13,8 @@ import {
   Bell,
 } from "lucide-react";
 
-// Mock Google Maps API Key - replace with your actual key
-const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+// Mapbox Access Token - replace with your actual token
+const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
 
 // Main DriverPage Component
 export default function DriverPage() {
@@ -235,169 +237,176 @@ const JourneyView = ({ showNotification }) => (
   </div>
 );
 
-// Working Map Component
+// Mapbox Map Component
 const MapView = () => {
-  const [map, setMap] = useState(null);
+  const mapContainer = useRef(null);
+  const map = useRef(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const markersRef = useRef([]);
 
   useEffect(() => {
-    // Load Google Maps API
-    if (!window.google) {
-      const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=marker`;
-      script.async = true;
-      script.defer = true;
-      script.onload = () => {
-        setMapLoaded(true);
-      };
-      script.onerror = () => {
-        console.error("Failed to load Google Maps API");
-      };
-      document.head.appendChild(script);
-    } else {
-      setMapLoaded(true);
+    // Check if Mapbox access token is available
+    if (!MAPBOX_ACCESS_TOKEN) {
+      console.error("Mapbox access token is missing");
+      setIsLoading(false);
+      return;
     }
+
+    // Initialize map after component mounts and container is available
+    const initializeMap = () => {
+      if (!mapContainer.current || map.current) return;
+
+      try {
+        // Set the access token
+        mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+
+        // Create the map
+        map.current = new mapboxgl.Map({
+          container: mapContainer.current,
+          style: 'mapbox://styles/mapbox/streets-v12',
+          center: [88.3639, 22.5726], // Center on Kolkata [lng, lat]
+          zoom: 14,
+          attributionControl: false,
+        });
+
+        // Add navigation controls
+        map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+        // Handle map load event
+        map.current.on('load', () => {
+          setMapLoaded(true);
+          setIsLoading(false);
+          addBusMarkers();
+        });
+
+        // Handle map error
+        map.current.on('error', (e) => {
+          console.error('Mapbox error:', e);
+          setIsLoading(false);
+        });
+
+      } catch (error) {
+        console.error("Error initializing Mapbox:", error);
+        setIsLoading(false);
+      }
+    };
+
+    // Use a small delay to ensure DOM is ready
+    const timer = setTimeout(initializeMap, 100);
+
+    // Cleanup function
+    return () => {
+      clearTimeout(timer);
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+      }
+      // Clean up markers
+      markersRef.current.forEach(marker => marker.remove());
+      markersRef.current = [];
+    };
   }, []);
 
-  useEffect(() => {
-    if (mapLoaded && window.google) {
-      initializeMap();
-    }
-  }, [mapLoaded]);
+  const addBusMarkers = () => {
+    if (!map.current) return;
 
-  const initializeMap = async () => {
-    try {
-      // Center on Kolkata
-      const center = { lat: 22.5726, lng: 88.3639 };
+    // Clear existing markers
+    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current = [];
 
-      // Create the map
-      const mapInstance = new window.google.maps.Map(
-        document.getElementById("map"),
-        {
-          zoom: 14,
-          center: center,
-          mapId: "8d46261853eb87145a5d0cb9",
-          disableDefaultUI: false,
-          styles: [
-            {
-              featureType: "poi",
-              elementType: "labels",
-              stylers: [{ visibility: "off" }],
-            },
-          ],
-        }
-      );
+    // Bus data
+    const busMarkers = [
+      {
+        coordinates: [88.365, 22.576], // [lng, lat]
+        text: "Route 215A",
+        color: "#2196F3",
+      },
+      {
+        coordinates: [88.36, 22.568],
+        text: "Route S-7",
+        color: "#4CAF50",
+      },
+      {
+        coordinates: [88.37, 22.58],
+        text: "Route AC-9",
+        color: "#FF9800",
+      },
+    ];
 
-      setMap(mapInstance);
+    busMarkers.forEach((busData, index) => {
+      // Create a custom marker element
+      const markerElement = document.createElement("div");
+      markerElement.className = "custom-marker";
+      markerElement.style.cssText = `
+        background: ${busData.color};
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        border: 2px solid white;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+      `;
+      markerElement.innerHTML = "🚌";
 
-      // Add bus markers
-      const busMarkers = [
-        {
-          coordinates: { lat: 22.576, lng: 88.365 },
-          text: "Route 215A",
-          color: "#2196F3",
-        },
-        {
-          coordinates: { lat: 22.568, lng: 88.36 },
-          text: "Route S-7",
-          color: "#4CAF50",
-        },
-        {
-          coordinates: { lat: 22.58, lng: 88.37 },
-          text: "Route AC-9",
-          color: "#FF9800",
-        },
-      ];
-
-      // Add markers to map
-      busMarkers.forEach((busData, index) => {
-        // Create a custom marker element
-        const markerElement = document.createElement("div");
-        markerElement.style.cssText = `
-          background: ${busData.color};
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-weight: bold;
-          font-size: 12px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-          border: 2px solid white;
-          cursor: pointer;
-          position: relative;
-        `;
-        markerElement.innerHTML = "🚌";
-
-        // Create info window content
-        const infoContent = document.createElement("div");
-        infoContent.style.cssText = `
-          background: ${busData.color};
-          color: white;
-          padding: 4px 8px;
-          border-radius: 4px;
-          font-size: 11px;
-          font-weight: 600;
-          margin-top: 2px;
-          text-align: center;
-          white-space: nowrap;
-        `;
-        infoContent.textContent = busData.text;
-
-        const container = document.createElement("div");
-        container.appendChild(markerElement);
-        container.appendChild(infoContent);
-
-        // Try to use AdvancedMarkerElement if available
-        if (
-          window.google.maps.marker &&
-          window.google.maps.marker.AdvancedMarkerElement
-        ) {
-          new window.google.maps.marker.AdvancedMarkerElement({
-            map: mapInstance,
-            position: busData.coordinates,
-            content: container,
-          });
-        } else {
-          // Fallback to regular marker
-          const marker = new window.google.maps.Marker({
-            position: busData.coordinates,
-            map: mapInstance,
-            title: busData.text,
-            icon: {
-              path: window.google.maps.SymbolPath.CIRCLE,
-              scale: 20,
-              fillColor: busData.color,
-              fillOpacity: 1,
-              strokeWeight: 2,
-              strokeColor: "#ffffff",
-            },
-          });
-
-          const infoWindow = new window.google.maps.InfoWindow({
-            content: `<div style="padding: 8px; font-weight: bold;">${busData.text}</div>`,
-          });
-
-          marker.addListener("click", () => {
-            infoWindow.open(mapInstance, marker);
-          });
-        }
+      // Add hover effect
+      markerElement.addEventListener('mouseenter', () => {
+        markerElement.style.transform = 'scale(1.1)';
       });
-    } catch (error) {
-      console.error("Error initializing map:", error);
-    }
+      
+      markerElement.addEventListener('mouseleave', () => {
+        markerElement.style.transform = 'scale(1)';
+      });
+
+      // Create popup content
+      const popup = new mapboxgl.Popup({
+        offset: 25,
+        closeButton: false,
+        className: 'custom-popup'
+      }).setHTML(`
+        <div style="
+          background: ${busData.color};
+          color: white;
+          padding: 8px 12px;
+          border-radius: 6px;
+          font-size: 14px;
+          font-weight: 600;
+          text-align: center;
+          margin: -10px;
+        ">
+          ${busData.text}
+        </div>
+      `);
+
+      // Create and add marker
+      const marker = new mapboxgl.Marker(markerElement)
+        .setLngLat(busData.coordinates)
+        .setPopup(popup)
+        .addTo(map.current);
+
+      // Keep track of markers for cleanup
+      markersRef.current.push(marker);
+    });
   };
 
-  if (!mapLoaded) {
+  if (isLoading) {
     return (
       <div className="bg-white rounded-xl shadow-lg h-96 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
           <p className="text-slate-600">Loading Map...</p>
           <p className="text-xs text-slate-400 mt-2">
-            Please add your Google Maps API key
+            {!MAPBOX_ACCESS_TOKEN 
+              ? "Please add your Mapbox access token" 
+              : "Initializing Mapbox..."
+            }
           </p>
         </div>
       </div>
@@ -406,7 +415,11 @@ const MapView = () => {
 
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden h-96">
-      <div id="map" className="w-full h-full"></div>
+      <div 
+        ref={mapContainer} 
+        className="w-full h-full"
+        style={{ position: 'relative' }}
+      />
     </div>
   );
 };

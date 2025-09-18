@@ -1,5 +1,33 @@
 @import "tailwindcss";
 
+/* Custom Mapbox Styles */
+.mapboxgl-popup-content {
+  padding: 0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.mapboxgl-popup-tip {
+  border-top-color: transparent !important;
+}
+
+.custom-popup .mapboxgl-popup-content {
+  background: transparent !important;
+}
+
+.mapboxgl-ctrl-group {
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.mapboxgl-ctrl button {
+  border-radius: 6px !important;
+}
+
+.custom-marker:hover {
+  z-index: 1000;
+}
+
 /*:root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
