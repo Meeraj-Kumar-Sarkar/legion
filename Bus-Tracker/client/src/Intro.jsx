@@ -37,12 +37,12 @@ export default function EnterpriseHomePage() {
             and built for enterprise-level transport systems.
           </p>
           <div className="flex space-x-4">
-            <button
+            {/* <button
               className="bg-white text-green-700 px-6 py-3 rounded-lg font-medium shadow-lg hover:scale-105 transition"
               onClick={() => navigate("/App/user")}
             >
               Search Bus
-            </button>
+            </button> */}
             <button
               className="bg-white text-green-700 px-6 py-3 rounded-lg font-medium shadow-lg hover:scale-105 transition"
               onClick={() => navigate("/App")}
