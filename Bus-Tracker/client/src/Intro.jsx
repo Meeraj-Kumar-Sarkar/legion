@@ -8,6 +8,7 @@ import {
   BarChart3,
   Users,
   Route,
+  Signal,
   CreditCard,
   Menu,
   X,
@@ -44,10 +45,9 @@ export default function EnterpriseHomePage() {
         "Track your bus in real time with GPS integration and live updates.",
     },
     {
-      icon: CreditCard,
-      title: "Seamless Payments",
-      description:
-        "Secure, enterprise-grade payment gateway for smooth transactions.",
+      icon: Signal,
+      title: "Low Bandwidth",
+      description: "Uses MQTT protocol which works in low bandwidth.",
     },
     {
       icon: Shield,
