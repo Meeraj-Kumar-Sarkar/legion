@@ -85,34 +85,34 @@ export default function EnterpriseHomePage() {
     },
   ];
 
-  const testimonials = [
-    {
-      name: "Sarah Johnson",
-      role: "Daily Commuter",
-      content:
-        "TransitHub has transformed my daily commute. Real-time tracking means I never miss my bus again!",
-      rating: 5,
-    },
-    {
-      name: "Mike Chen",
-      role: "Bus Driver",
-      content:
-        "The driver dashboard is intuitive and helps me manage my routes efficiently. Great platform!",
-      rating: 5,
-    },
-    {
-      name: "Lisa Rodriguez",
-      role: "Transit Manager",
-      content:
-        "Our fleet efficiency has improved by 30% since implementing TransitHub's analytics.",
-      rating: 5,
-    },
-  ];
+  // const testimonials = [
+  //   {
+  //     name: "Sarah Johnson",
+  //     role: "Daily Commuter",
+  //     content:
+  //       "TransitHub has transformed my daily commute. Real-time tracking means I never miss my bus again!",
+  //     rating: 5,
+  //   },
+  //   {
+  //     name: "Mike Chen",
+  //     role: "Bus Driver",
+  //     content:
+  //       "The driver dashboard is intuitive and helps me manage my routes efficiently. Great platform!",
+  //     rating: 5,
+  //   },
+  //   {
+  //     name: "Lisa Rodriguez",
+  //     role: "Transit Manager",
+  //     content:
+  //       "Our fleet efficiency has improved by 30% since implementing TransitHub's analytics.",
+  //     rating: 5,
+  //   },
+  // ];
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800">
+    <div className="min-h-screen bg-gray-50 text-gray-800 font-medium">
       {/* Navbar */}
-      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200">
+      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b-2 border-gray-200">
         <div className="max-w-7xl mx-auto px-4 flex justify-between items-center h-16">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
@@ -121,7 +121,7 @@ export default function EnterpriseHomePage() {
             <h1 className="text-2xl font-bold text-green-600">TransitHub</h1>
           </div>
 
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-8 font-medium">
             <a
               href="#services"
               className="text-gray-600 hover:text-green-600 transition-colors"
@@ -204,26 +204,26 @@ export default function EnterpriseHomePage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden text-black">
+      <section className="relative overflow-hidden text-gray-800">
         <div className="max-w-7xl mx-auto px-6 py-20 grid lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-8">
-            <h2 className="text-4xl lg:text-6xl font-bold leading-tight">
+            <h2 className="text-4xl lg:text-6xl font-medium leading-tight ">
               Smart Transit{" "}
               <span className="text-green-800 block">Management</span>
             </h2>
-            <p className="text-lg max-w-lg">
+            <p className="text-2xl max-w-lg font-extralight">
               A unified platform for passengers and drivers — secure, efficient,
               and built for enterprise-level transport systems.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <button
-                className="bg-black/20 text-green-700 px-6 py-3 rounded-lg border border-transparent font-medium shadow-lg transition hover:border-green-600 hover:scale-105"
+                className="bg-black/20 text-green-700 px-6 py-3 rounded-lg border border-transparent font-medium hover:shadow-2xl transition hover:border-green-600 hover:scale-105"
                 onClick={() => navigate("/App")}
               >
                 Login
               </button>
 
-              <button className="bg-black/20 px-6 py-3 rounded-lg border border-transparent font-medium shadow-lg transition hover:border-green-600 hover:scale-105">
+              <button className="bg-black/20 px-6 py-3 rounded-lg border border-transparent font-medium hover:shadow-2xl transition hover:border-blue-600 hover:scale-105 hover:text-blue-800">
                 Watch Demo
               </button>
             </div>
@@ -243,8 +243,8 @@ export default function EnterpriseHomePage() {
       <section id="services" className="py-20 lg:py-32">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h3 className="text-3xl lg:text-4xl font-bold">Our Services</h3>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <h3 className="text-3xl lg:text-4xl font-medium">Our Services</h3>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto font-extralight">
               Comprehensive solutions for every stakeholder in your transit
               ecosystem
             </p>
@@ -267,7 +267,9 @@ export default function EnterpriseHomePage() {
                   <service.icon className="w-8 h-8" />
                 </div>
                 <h4 className="text-xl font-semibold mb-2">{service.title}</h4>
-                <p className="text-gray-600">{service.description}</p>
+                <p className="text-gray-600 font-normal text-lg">
+                  {service.description}
+                </p>
               </div>
             ))}
           </div>
@@ -278,8 +280,8 @@ export default function EnterpriseHomePage() {
       <section id="features" className="py-20 lg:py-32 bg-gray-100">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h3 className="text-3xl lg:text-4xl font-bold">Core Features</h3>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <h3 className="text-3xl lg:text-4xl font-medium">Core Features</h3>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto font-extralight">
               Advanced technology powering the future of public transportation
             </p>
           </div>
@@ -300,8 +302,10 @@ export default function EnterpriseHomePage() {
                     <feature.icon className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="text-xl font-semibold">{feature.title}</h4>
-                    <p className="text-gray-600">{feature.description}</p>
+                    <h4 className="text-xl font-medium">{feature.title}</h4>
+                    <p className="text-gray-600 font-normal">
+                      {feature.description}
+                    </p>
                   </div>
                 </div>
               </div>
