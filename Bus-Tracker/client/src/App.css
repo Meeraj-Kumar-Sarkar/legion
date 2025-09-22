@@ -1,8 +1,13 @@
 .background-container {
   background-image: url("https://images.unsplash.com/photo-1572675339312-3e8b094a544d?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
-  background-size: cover; /* Adjusts image to cover the container */
-  background-position: center; /* Centers the image */
-  background-repeat: no-repeat; /* Prevents tiling */
-  height: 100vh; /* Full viewport height */
-  width: 100%; /* Full width */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.background-small {
+  background-image: url("https://images.unsplash.com/photo-1607512060958-423166921a75?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }

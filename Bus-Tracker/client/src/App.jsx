@@ -148,10 +148,10 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen background-container flex items-center justify-center p-4">
-      <div className="flex w-full max-w-4xl bg-white/40 backdrop-blur-sm rounded-xl shadow-lg p-6">
+    <div className="min-h-screen w-full background-container flex items-center justify-center p-4">
+      <div className="flex w-full max-w-4xl bg-white/40 backdrop-blur-sm rounded-xl shadow-lg p-6 flex-col md:flex-row">
         {/* Left Side: Header and User Type Toggle */}
-        <div className="w-1/2 p-6 flex flex-col items-center justify-center border-r border-gray-300">
+        <div className="w-full md:w-1/2 p-6 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-gray-300">
           <div className="text-center mb-6">
             <div className="flex justify-center mb-4 text-4xl text-gray-800">
               {userType === "admin" ? <Bus /> : <User />}
@@ -194,7 +194,7 @@ function LoginPage() {
         </div>
 
         {/* Right Side: Form */}
-        <div className="w-1/2 p-6">
+        <div className="w-full md:w-1/2 p-6">
           <div className="space-y-4">
             {/* Registration Fields */}
             {!isLogin && (
@@ -211,7 +211,7 @@ function LoginPage() {
                       onChange={handleInputChange}
                       required
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      placeholder="Meeraj"
+                      placeholder="eg. Mohon Kumar"
                     />
                   </div>
                   <div>
@@ -225,7 +225,7 @@ function LoginPage() {
                       onChange={handleInputChange}
                       required
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      placeholder="Sarkar"
+                      placeholder="eg. Sharma"
                     />
                   </div>
                 </div>
@@ -245,7 +245,7 @@ function LoginPage() {
                       onChange={handleInputChange}
                       required
                       className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      placeholder="+91 8697142536"
+                      placeholder="eg. +91 0000050505"
                     />
                   </div>
                 </div>
@@ -281,7 +281,7 @@ function LoginPage() {
                           required
                           min="0"
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                          placeholder="5"
+                          placeholder="3"
                         />
                       </div>
                     </div>
