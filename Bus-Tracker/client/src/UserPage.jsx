@@ -13,6 +13,7 @@ import {
   Clock,
   Users,
   Route,
+  LogOut, // ## 1. Import the LogOut icon
 } from "lucide-react";
 
 // ## Main UserPage Component
@@ -45,6 +46,20 @@ export default function UserPage() {
     }, 3000);
   };
 
+  // ## 2. Create the logout handler function
+  const handleLogout = () => {
+    // Remove user data from local storage
+    localStorage.removeItem("userData");
+    // Reset the user state in the application
+    setUser(null);
+    // Show a confirmation message
+    showNotification("You have been successfully logged out.");
+    // Redirect to the sign-in page after a short delay
+    setTimeout(() => {
+      window.location.href = "/App";
+    }, 1500);
+  };
+
   const mainContentVariants = {
     open: {
       marginLeft: window.innerWidth >= 1024 ? "16rem" : "0",
@@ -65,12 +80,12 @@ export default function UserPage() {
         setActiveTab={setActiveTab}
         showNotification={showNotification}
         user={user}
+        onLogout={handleLogout} // ## 3. Pass the function as a prop
       />
       <motion.main
-        className="relative" // Simplified className
+        className="relative"
         variants={mainContentVariants}
         animate={isSidebarOpen ? "open" : "closed"}
-        // CHANGED: Synced transition with the sidebar for a cohesive and smooth feel.
         transition={{ ease: [0.32, 0.72, 0, 1], duration: 0.5 }}
       >
         <Header
@@ -97,6 +112,7 @@ const Sidebar = ({
   setActiveTab,
   showNotification,
   user,
+  onLogout, // ## 4. Receive the onLogout prop
 }) => {
   const sidebarVariants = {
     open: { x: 0 },
@@ -120,7 +136,6 @@ const Sidebar = ({
             animate="open"
             exit="closed"
             variants={sidebarVariants}
-            // CHANGED: Replaced 'spring' with a custom 'ease' curve for a much smoother slide.
             transition={{ ease: [0.32, 0.72, 0, 1], duration: 0.5 }}
             className="fixed top-0 left-0 h-full w-64 bg-slate-900 text-slate-100 p-6 flex flex-col shadow-2xl z-50"
           >
@@ -151,7 +166,15 @@ const Sidebar = ({
                 </button>
               ))}
             </nav>
-            <div className="mt-auto">
+            {/* ## 5. Add the Logout button and structure for user profile */}
+            <div className="mt-auto flex flex-col space-y-3">
+              <button
+                onClick={onLogout}
+                className="flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 text-slate-300 hover:bg-red-500/20 hover:text-red-400"
+              >
+                <LogOut size={20} />
+                <span>Logout</span>
+              </button>
               <div className="flex items-center space-x-3 p-3 bg-slate-800 rounded-lg">
                 <img
                   src={`https://placehold.co/40x40/a78bfa/ffffff?text=${
@@ -164,7 +187,6 @@ const Sidebar = ({
                   <p className="font-semibold text-white">
                     {user ? `${user.firstName} ${user.lastName}` : "Guest"}
                   </p>
-                  {/* <p className="text-xs text-slate-400">Daily Commuter</p> */}
                 </div>
               </div>
             </div>
@@ -181,7 +203,6 @@ const Sidebar = ({
   );
 };
 
-// (The rest of the components: Header, DashboardContent, JourneyView, JourneyForm, etc., remain unchanged as the fix is only in the animation timing of the main layout.)
 // ## Header Component
 const Header = ({ sidebarToggle, userName }) => (
   <header className="sticky top-0 bg-slate-50/80 backdrop-blur-md z-30 p-4 sm:p-6 flex justify-between items-center border-b border-slate-200">
@@ -235,11 +256,9 @@ const DashboardContent = ({ activeTab, showNotification }) => (
 
 // ## Journey View Component
 const JourneyView = ({ showNotification }) => {
-  // ** State to hold bus results and loading status
   const [busResults, setBusResults] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // ** Mock bus data for demonstration
   const mockBusData = [
     {
       id: 1,
@@ -264,23 +283,20 @@ const JourneyView = ({ showNotification }) => {
     },
   ];
 
-  // ** Function to handle the search, passed to the form
   const handleRouteSearch = (from, to) => {
     setIsLoading(true);
-    setBusResults(null); // Clear previous results
+    setBusResults(null);
     showNotification(`Searching routes from ${from} to ${to}...`);
 
-    // ** Simulate an API call
     setTimeout(() => {
       setBusResults(mockBusData);
       setIsLoading(false);
-    }, 1500); // 1.5 second delay
+    }, 1500);
   };
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
       <div className="xl:col-span-3">
-        {/* ## Dynamic Content Area */}
         <div className="bg-white p-6 rounded-xl shadow-lg h-96 xl:h-full flex flex-col">
           <AnimatePresence mode="wait">
             {isLoading ? (
@@ -314,7 +330,6 @@ const JourneyForm = ({ showNotification, onRouteSearch }) => {
       showNotification("Please enter both start and end points.");
       return;
     }
-    // ** Call the parent function to trigger search
     onRouteSearch(from, to);
   };
 
@@ -404,8 +419,6 @@ const JourneyForm = ({ showNotification, onRouteSearch }) => {
 };
 
 // ## New Components for Dynamic Content Area
-
-// ** Component to show before any search
 const InitialMessage = () => (
   <motion.div
     initial={{ opacity: 0 }}
@@ -422,7 +435,6 @@ const InitialMessage = () => (
   </motion.div>
 );
 
-// ** Loading Spinner Component
 const LoadingSpinner = () => (
   <motion.div
     initial={{ opacity: 0 }}
@@ -439,7 +451,6 @@ const LoadingSpinner = () => (
   </motion.div>
 );
 
-// ** Bus Results List Component
 const BusResults = ({ data }) => {
   const listVariants = {
     visible: {

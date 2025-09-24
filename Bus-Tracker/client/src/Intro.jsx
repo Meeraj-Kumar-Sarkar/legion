@@ -118,7 +118,7 @@ export default function EnterpriseHomePage() {
             <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
               <Route className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-green-600">TransitHub</h1>
+            <h1 className="text-2xl font-bold text-green-600">Buzz</h1>
           </div>
 
           <div className="hidden md:flex items-center space-x-8 font-medium">
@@ -221,10 +221,6 @@ export default function EnterpriseHomePage() {
                 onClick={() => navigate("/App")}
               >
                 Login
-              </button>
-
-              <button className="bg-black/20 px-6 py-3 rounded-lg border border-transparent font-medium hover:shadow-2xl transition hover:border-blue-600 hover:scale-105 hover:text-blue-800">
-                Watch Demo
               </button>
             </div>
           </div>
