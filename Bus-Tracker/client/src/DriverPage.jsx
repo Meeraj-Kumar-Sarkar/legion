@@ -22,8 +22,8 @@ export default function DriverPage() {
   const [activeTab, setActiveTab] = useState("Journey");
   const [notification, setNotification] = useState(null);
   const [user, setUser] = useState({
-    firstName: "John",
-    lastName: "Doe",
+    firstName: "Guest",
+    lastName: "",
   });
 
   // Effect to handle window resize for sidebar visibility
@@ -229,7 +229,8 @@ const DashboardContent = ({ activeTab, showNotification }) => {
 const JourneyView = ({ showNotification }) => (
   <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
     <div className="xl:col-span-3">
-      <MapView />
+      {/* Pass showNotification to MapView */}
+      <MapView showNotification={showNotification} />
     </div>
     <div className="xl:col-span-2">
       <JourneyForm showNotification={showNotification} />
@@ -237,88 +238,80 @@ const JourneyView = ({ showNotification }) => (
   </div>
 );
 
-// Mapbox Map Component
-const MapView = () => {
+// Mapbox Map Component with Geolocation
+const MapView = ({ showNotification }) => {
   const mapContainer = useRef(null);
   const map = useRef(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const markersRef = useRef([]);
 
   useEffect(() => {
-    // Check if Mapbox access token is available
     if (!MAPBOX_ACCESS_TOKEN) {
       console.error("Mapbox access token is missing");
+      setError("Mapbox access token is missing.");
       setIsLoading(false);
       return;
     }
 
-    // Initialize map after component mounts and container is available
     const initializeMap = () => {
       if (!mapContainer.current || map.current) return;
 
       try {
-        // Set the access token
         mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
-
-        // Create the map
         map.current = new mapboxgl.Map({
           container: mapContainer.current,
-          style: 'mapbox://styles/mapbox/streets-v12',
-          center: [88.3639, 22.5726], // Center on Kolkata [lng, lat]
-          zoom: 14,
+          style: "mapbox://styles/mapbox/streets-v12",
+          center: [88.3639, 22.5726], // Default center on Kolkata
+          zoom: 12, // Start a bit zoomed out
           attributionControl: false,
         });
 
-        // Add navigation controls
-        map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+        map.current.addControl(new mapboxgl.NavigationControl(), "top-right");
 
-        // Handle map load event
-        map.current.on('load', () => {
+        map.current.on("load", () => {
+          console.log("map loaded successfully");
           setMapLoaded(true);
           setIsLoading(false);
+          setError(null);
           addBusMarkers();
         });
 
-        // Handle map error
-        map.current.on('error', (e) => {
-          console.error('Mapbox error:', e);
+        map.current.on("error", (e) => {
+          console.error("Mapbox error:", e);
+          setError(`Map error: ${e.error?.message || "Unknown error"}`);
           setIsLoading(false);
         });
-
-      } catch (error) {
-        console.error("Error initializing Mapbox:", error);
+      } catch (err) {
+        console.error("Error initializing Mapbox:", err);
+        setError(`Initialization error: ${err.message}`);
         setIsLoading(false);
       }
     };
 
-    // Use a small delay to ensure DOM is ready
     const timer = setTimeout(initializeMap, 100);
 
-    // Cleanup function
     return () => {
       clearTimeout(timer);
       if (map.current) {
         map.current.remove();
         map.current = null;
       }
-      // Clean up markers
-      markersRef.current.forEach(marker => marker.remove());
+      markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
     };
-  }, []);
+  }, [showNotification]); // Add dependency to useEffect
 
   const addBusMarkers = () => {
     if (!map.current) return;
 
-    // Clear existing markers
-    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
 
-    // Bus data
     const busMarkers = [
       {
-        coordinates: [88.365, 22.576], // [lng, lat]
+        coordinates: [88.365, 22.576],
         text: "Route 215A",
         color: "#2196F3",
       },
@@ -334,64 +327,41 @@ const MapView = () => {
       },
     ];
 
-    busMarkers.forEach((busData, index) => {
-      // Create a custom marker element
+    busMarkers.forEach((busData) => {
       const markerElement = document.createElement("div");
       markerElement.className = "custom-marker";
       markerElement.style.cssText = `
-        background: ${busData.color};
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: bold;
-        font-size: 16px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        border: 2px solid white;
-        cursor: pointer;
-        transition: transform 0.2s ease;
+        background: ${busData.color}; width: 40px; height: 40px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-weight: bold; font-size: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 2px solid white;
+        cursor: pointer; transition: transform 0.2s ease;
       `;
       markerElement.innerHTML = "🚌";
+      markerElement.addEventListener(
+        "mouseenter",
+        () => (markerElement.style.transform = "scale(1.1)")
+      );
+      markerElement.addEventListener(
+        "mouseleave",
+        () => (markerElement.style.transform = "scale(1)")
+      );
 
-      // Add hover effect
-      markerElement.addEventListener('mouseenter', () => {
-        markerElement.style.transform = 'scale(1.1)';
-      });
-      
-      markerElement.addEventListener('mouseleave', () => {
-        markerElement.style.transform = 'scale(1)';
-      });
-
-      // Create popup content
       const popup = new mapboxgl.Popup({
         offset: 25,
         closeButton: false,
-        className: 'custom-popup'
+        className: "custom-popup",
       }).setHTML(`
-        <div style="
-          background: ${busData.color};
-          color: white;
-          padding: 8px 12px;
-          border-radius: 6px;
-          font-size: 14px;
-          font-weight: 600;
-          text-align: center;
-          margin: -10px;
-        ">
+        <div style="background: ${busData.color}; color: white; padding: 8px 12px; border-radius: 6px; font-size: 14px; font-weight: 600; text-align: center; margin: -10px;">
           ${busData.text}
         </div>
       `);
 
-      // Create and add marker
       const marker = new mapboxgl.Marker(markerElement)
         .setLngLat(busData.coordinates)
         .setPopup(popup)
         .addTo(map.current);
 
-      // Keep track of markers for cleanup
       markersRef.current.push(marker);
     });
   };
@@ -402,12 +372,44 @@ const MapView = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
           <p className="text-slate-600">Loading Map...</p>
-          <p className="text-xs text-slate-400 mt-2">
-            {!MAPBOX_ACCESS_TOKEN 
-              ? "Please add your Mapbox access token" 
-              : "Initializing Mapbox..."
-            }
-          </p>
+          <p className="text-xs text-slate-400 mt-2">Initializing Mapbox...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-xl shadow-lg h-96 flex items-center justify-center">
+        <div className="text-center p-6">
+          <div className="text-red-500 mb-4">
+            <svg
+              className="w-16 h-16 mx-auto"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">
+            Map Failed to Load
+          </h3>
+          <p className="text-sm text-gray-600 mb-4">{error}</p>
+          <div className="text-xs text-gray-400 bg-gray-50 p-3 rounded border-l-4 border-yellow-400">
+            <p>
+              <strong>To fix this:</strong>
+            </p>
+            <ol className="text-left mt-2 space-y-1">
+              <li>1. Check your Mapbox token</li>
+              <li>2. Ensure token starts with 'pk.'</li>
+              <li>3. Restart your development server</li>
+              <li>4. Check browser console for errors</li>
+            </ol>
+          </div>
         </div>
       </div>
     );
@@ -415,10 +417,10 @@ const MapView = () => {
 
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden h-96">
-      <div 
-        ref={mapContainer} 
+      <div
+        ref={mapContainer}
         className="w-full h-full"
-        style={{ position: 'relative' }}
+        style={{ position: "relative" }}
       />
     </div>
   );
@@ -540,6 +542,17 @@ const Notification = ({ message }) => (
 
       .animate-slideUp {
         animation: slideUp 0.3s ease-out;
+      }
+
+      /* ---- NEW: STYLE FOR USER LOCATION MARKER ---- */
+      .user-marker {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: #1e90ff; /* Dodger Blue */
+        border: 3px solid #ffffff;
+        box-shadow: 0 0 0 2px #1e90ff;
+        cursor: pointer;
       }
     `}</style>
   </>

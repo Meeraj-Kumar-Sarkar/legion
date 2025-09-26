@@ -2,6 +2,9 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
+// ⭐️ IMPORT MQTT SERVICE TO INITIALIZE CONNECTION ⭐️
+const mqttClient = require("./mqttService");
+
 const passengerAuth = require("./routes/passengerAuth");
 const driverAuth = require("./routes/driverAuth");
 
@@ -27,7 +30,7 @@ app.use("/api/driver", driverAuth);
 
 // test route
 app.get("/", (req, res) => {
-  res.send("🚀 Server is running with MongoDB Atlas");
+  res.send("🚀 Server is running with MongoDB Atlas and MQTT");
 });
 
 const PORT = 5000;
