@@ -148,7 +148,7 @@ export default function EnterpriseHomePage() {
             </a>
             <button
               className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
-              onClick={() => navigate("/App")}
+              onClick={() => navigate("/login")}
             >
               Login
             </button>
@@ -361,12 +361,10 @@ export default function EnterpriseHomePage() {
         <h3 className="text-3xl lg:text-4xl font-bold mb-4">
           Ready to transform your transport system?
         </h3>
-        <p className="mb-6">
-          Join TransitHub today and experience the future of smart mobility.
-        </p>
+        <p className="mb-6">Register Buzz as Admin to register Bus.</p>
         <button
           className="bg-white text-blue-700 px-6 py-3 rounded-lg font-medium shadow-lg hover:scale-105 transition"
-          onClick={() => navigate("/App")}
+          onClick={() => navigate("/AdminLogin")}
         >
           Get Started
         </button>

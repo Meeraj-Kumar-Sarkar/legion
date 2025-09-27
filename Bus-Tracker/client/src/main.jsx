@@ -2,15 +2,28 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./index.css";
+
 import App from "./App.jsx";
 import Intro from "./Intro.jsx";
+import AdminLogin from "./AdminLogin.jsx";
+import AdminPage from "./Admin.jsx"; // Make sure AdminPage is imported
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Intro />}></Route>
-        <Route path="/*" element={<App />}></Route>
+        <Route path="/" element={<Intro />} />
+
+        {/* This <Route> now acts as a parent for admin paths */}
+        <Route path="/AdminLogin">
+          {/* The index route renders the login form at "/AdminLogin" */}
+          <Route index element={<AdminLogin />} />
+
+          {/* The child route renders the dashboard at "/AdminLogin/Admin" */}
+          <Route path="Admin" element={<AdminPage />} />
+        </Route>
+
+        <Route path="/App/*" element={<App />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>
