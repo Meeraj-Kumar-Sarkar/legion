@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, Bus, Mail, Lock, Phone, Eye, EyeOff } from "lucide-react";
@@ -93,9 +95,9 @@ function LoginPage() {
 
       if (isLogin) {
         if (userType === "admin") {
-          navigate("/driver");
+          navigate("/App/driver");
         } else {
-          navigate("/user");
+          navigate("/App/user");
         }
       } else {
         // After successful registration, switch to login mode

@@ -11,8 +11,6 @@ function App() {
     <Routes>
       {/* The LoginPage is now the root route */}
       <Route path="/" element={<LoginPage />} />
-
-      {/* Routes for other pages */}
       <Route path="/user" element={<UserPage />} />
       <Route path="/driver" element={<DriverPage />} />
 

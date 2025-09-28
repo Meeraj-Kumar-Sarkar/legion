@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bus, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
@@ -47,7 +49,7 @@ function AdminLogin() {
     try {
       const action = isLogin ? "login" : "signup";
 
-      const apiData = isLogin 
+      const apiData = isLogin
         ? {
             email: formData.email,
             password: formData.password,
@@ -59,7 +61,10 @@ function AdminLogin() {
             password: formData.password,
           };
 
-      console.log("Sending request to:", `http://localhost:5000/api/admin/${action}`);
+      console.log(
+        "Sending request to:",
+        `http://localhost:5000/api/admin/${action}`
+      );
       console.log("Request data:", apiData);
 
       const response = await fetch(
@@ -82,11 +87,15 @@ function AdminLogin() {
         data = JSON.parse(responseText);
       } catch (parseError) {
         console.error("Failed to parse JSON:", parseError);
-        throw new Error("Server returned an invalid response. Check if backend is running.");
+        throw new Error(
+          "Server returned an invalid response. Check if backend is running."
+        );
       }
 
       if (!response.ok) {
-        throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        throw new Error(
+          data.message || `HTTP error! status: ${response.status}`
+        );
       }
 
       // Save token and admin data
@@ -97,7 +106,7 @@ function AdminLogin() {
       alert(`${isLogin ? "Login" : "Registration"} successful!`);
 
       if (isLogin) {
-        navigate("/admin/dashboard");
+        navigate("/AdminLogin/Admin");
       } else {
         setIsLogin(true);
         resetForm();

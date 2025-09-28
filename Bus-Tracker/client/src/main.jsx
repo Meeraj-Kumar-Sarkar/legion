@@ -13,16 +13,8 @@ createRoot(document.getElementById("root")).render(
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Intro />} />
-
-        {/* This <Route> now acts as a parent for admin paths */}
-        <Route path="/AdminLogin">
-          {/* The index route renders the login form at "/AdminLogin" */}
-          <Route index element={<AdminLogin />} />
-
-          {/* The child route renders the dashboard at "/AdminLogin/Admin" */}
-          <Route path="Admin" element={<AdminPage />} />
-        </Route>
-
+        <Route path="/AdminLogin" element={<AdminLogin />} />
+        <Route path="/AdminLogin/Admin" element={<AdminPage />} />
         <Route path="/App/*" element={<App />} />
       </Routes>
     </BrowserRouter>
