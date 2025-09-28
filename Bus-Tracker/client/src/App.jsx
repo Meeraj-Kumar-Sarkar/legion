@@ -5,6 +5,7 @@ import "./App.css";
 import LoginPage from "./LoginPage";
 import UserPage from "./UserPage";
 import DriverPage from "./DriverPage";
+import RouteTest from "./RouteTest";
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
       <Route path="/" element={<LoginPage />} />
       <Route path="/user" element={<UserPage />} />
       <Route path="/driver" element={<DriverPage />} />
+      <Route path="/test" element={<RouteTest />} />
 
       {/* A catch-all route for any undefined paths */}
       <Route path="*" element={<div>404 - Page Not Found</div>} />
