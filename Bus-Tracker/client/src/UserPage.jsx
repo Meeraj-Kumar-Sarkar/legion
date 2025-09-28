@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 
 // Mapbox Access Token - replace with your actual token
-const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || 'pk.eyJ1IjoiYW53YXkiLCJhIjoiY204cnBnMTI4MGJhZTJqcW9zanFsdHQ5dyJ9.8vPWczyzy17xKv0wYenDOg';
+const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || '';
 
 // Debug: Log the token to check if it's being loaded
 console.log('MAPBOX_ACCESS_TOKEN:', MAPBOX_ACCESS_TOKEN);
