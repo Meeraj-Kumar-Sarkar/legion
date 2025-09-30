@@ -1,7 +1,7 @@
-const express = require('express');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const Passenger = require('../models/Passenger');
+import express from 'express';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import Passenger from '../models/Passenger.js';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'secretKey';
@@ -82,4 +82,4 @@ router.post('/login', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const passengerSchema = new mongoose.Schema({
     firstName: { type: String, required: true, trim: true },
@@ -18,4 +18,4 @@ const passengerSchema = new mongoose.Schema({
     password: { type: String, required: true, minlength: 6 }
 });
 
-module.exports = mongoose.model('Passenger', passengerSchema);
+export default mongoose.model('Passenger', passengerSchema);

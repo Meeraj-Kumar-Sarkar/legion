@@ -1,6 +1,7 @@
 // server/mqttService.js
 
-const mqtt = require('mqtt');
+// const mqtt = require('mqtt');
+import mqtt from 'mqtt';
 // ⚠️ REPLACE these placeholders with your actual HiveMQ Cloud details ⚠️
 const HIVEMQ_HOST = "tls://a8c1ffa8b6454f88b0c7e1932ceba271.s1.eu.hivemq.cloud"; // e.g., tls://abcde12345.s1.eu.hivemq.cloud
 const HIVEMQ_PORT = 8883; // Secure port for MQTT over TLS
@@ -61,4 +62,4 @@ mqttClient.on('message', (topic, message) => {
 });
 
 // Export the client so other Express routes can use the .publish() method
-module.exports = mqttClient;
+export default mqttClient;

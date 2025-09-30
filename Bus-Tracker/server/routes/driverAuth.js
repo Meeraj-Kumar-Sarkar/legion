@@ -1,15 +1,14 @@
-const express = require('express');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const Driver = require('../models/Driver');
-const mqttClient = require('../mqttService');
+import express from 'express';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import Driver from '../models/Driver.js';
+import mqttClient from '../mqttService.js';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'secretKey';
 
 // Driver signup
 router.post('/signup', async (req, res) => {
-  // ... (existing signup logic remains the same) ...
   try {
     const { firstName, lastName, phone, email, password, confirmPassword, license, yearsExperience } = req.body;
     if (!firstName || !lastName || !phone || !email || !password || !confirmPassword || !license || yearsExperience == null) {
@@ -42,7 +41,6 @@ router.post('/signup', async (req, res) => {
 
 // Driver login
 router.post('/login', async (req, res) => {
-  // ... (existing login logic remains the same) ...
   try {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
@@ -61,11 +59,8 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// 2. ⭐️ NEW ROUTE: PUBLISH REAL-TIME LOCATION ⭐️
-// A driver's device posts its location to this Express endpoint, 
-// and the server relays it to the MQTT broker for passengers/admin to subscribe to.
+// Publish real-time location
 router.post('/publish-location', async (req, res) => {
-  // Assuming the device sends driverId, latitude, and longitude
   const { driverId, latitude, longitude } = req.body;
 
   if (!driverId || latitude == null || longitude == null) {
@@ -80,13 +75,9 @@ router.post('/publish-location', async (req, res) => {
   });
 
   try {
-    // Publish the message to the HiveMQ broker
-    // QoS 1 (at least once) is a good standard for location data
     mqttClient.publish(topic, payload, { qos: 1 }, (err) => {
       if (err) {
         console.error(`MQTT Publish Error for ${topic}:`, err);
-        // Even if MQTT fails, we might still return success if the HTTP request is all we care about
-        // But generally, you want to log and handle the error.
         return res.status(500).json({ error: 'Failed to publish location via MQTT' });
       }
       console.log(`Published location for Driver ${driverId} to ${topic}`);
@@ -98,4 +89,4 @@ router.post('/publish-location', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
