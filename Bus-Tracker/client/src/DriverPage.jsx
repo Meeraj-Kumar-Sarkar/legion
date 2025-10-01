@@ -517,7 +517,7 @@ const MapView = forwardRef((_, ref) => {
 
     const routeColor = "#FF5722";
     try {
-      showNotification("🔍 Displaying route...");
+      showNotification("🗺️ Fetching navigation route...");
 
       // Clear existing route layers and markers
       if (routeSourceRef.current && map.current.getSource("route")) {
@@ -572,20 +572,32 @@ const MapView = forwardRef((_, ref) => {
         markersRef.current.push(marker);
       });
 
-      // Draw polyline for the route
-      const coordinates = route.stops.map((stop) => [
-        stop.coordinates.longitude,
-        stop.coordinates.latitude,
-      ]);
+      // Get navigation route instead of straight lines
+      const waypoints = route.stops
+        .map(
+          (stop) => `${stop.coordinates.longitude},${stop.coordinates.latitude}`
+        )
+        .join(";");
+
+      const directionsUrl = `https://api.mapbox.com/directions/v5/mapbox/driving/${waypoints}?geometries=geojson&overview=full&access_token=${mapboxgl.accessToken}`;
+
+      const response = await fetch(directionsUrl);
+      const data = await response.json();
+
+      if (!response.ok || !data.routes || data.routes.length === 0) {
+        throw new Error(
+          data.message || "Failed to fetch route from Mapbox API."
+        );
+      }
+
+      const routeGeometry = data.routes[0].geometry;
+
       map.current.addSource("route", {
         type: "geojson",
         data: {
           type: "Feature",
           properties: {},
-          geometry: {
-            type: "LineString",
-            coordinates,
-          },
+          geometry: routeGeometry,
         },
       });
 
@@ -625,13 +637,16 @@ const MapView = forwardRef((_, ref) => {
       // Update bus marker
       addCurrentBusLocation(
         route.route_name,
-        route.start_location.coordinates,
+        [
+          route.start_location.coordinates.longitude,
+          route.start_location.coordinates.latitude,
+        ],
         routeColor
       );
 
       // Fit map to route bounds
       const bounds = new mapboxgl.LngLatBounds();
-      coordinates.forEach((coord) => bounds.extend(coord));
+      routeGeometry.coordinates.forEach((coord) => bounds.extend(coord));
       map.current.fitBounds(bounds, {
         padding: { top: 50, bottom: 50, left: 50, right: 50 },
         duration: 2000,
@@ -774,8 +789,8 @@ const JourneyForm = ({ showNotification, onRouteDisplay }) => {
             <option value="">Select a route</option>
             {allRoutes.map((route) => (
               <option key={route.route_id} value={route.route_id}>
-                `{route.route_id}
-                {route.route_name}`
+                {route.route_id}
+                {route.route_name}
               </option>
             ))}
           </select>
