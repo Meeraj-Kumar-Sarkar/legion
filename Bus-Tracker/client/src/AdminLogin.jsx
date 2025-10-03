@@ -2,18 +2,22 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bus, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+// FIXED: Added IdCard to the import list
+import { Bus, Mail, Lock, User, Eye, EyeOff, IdCard } from "lucide-react";
 
 function AdminLogin() {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  // FIXED: Added the missing state for the confirm password field
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
-    username: "",
+    first_name: "",
+    last_name: "",
     email: "",
     password: "",
     confirmPassword: "",
+    driving_licence: "",
   });
   const navigate = useNavigate();
 
@@ -40,8 +44,12 @@ function AdminLogin() {
       return;
     }
 
-    if (!isLogin && (!formData.name || !formData.username)) {
-      alert("Please fill in all required fields!");
+    // FIXED: Validation now checks for the correct state properties
+    if (
+      !isLogin &&
+      (!formData.first_name || !formData.last_name || !formData.driving_licence)
+    ) {
+      alert("Please fill in all required fields for registration!");
       setLoading(false);
       return;
     }
@@ -55,8 +63,10 @@ function AdminLogin() {
             password: formData.password,
           }
         : {
-            name: formData.name,
-            username: formData.username,
+            // FIXED: API payload now uses the correct state properties
+            first_name: formData.first_name,
+            last_name: formData.last_name,
+            driving_licence: formData.driving_licence,
             email: formData.email,
             password: formData.password,
           };
@@ -78,7 +88,6 @@ function AdminLogin() {
         }
       );
 
-      // Check if response is HTML (error page)
       const responseText = await response.text();
       console.log("Raw response:", responseText);
 
@@ -98,7 +107,6 @@ function AdminLogin() {
         );
       }
 
-      // Save token and admin data
       localStorage.setItem("token", data.token);
       localStorage.setItem("userType", "admin");
       localStorage.setItem("userData", JSON.stringify(data.admin));
@@ -106,7 +114,7 @@ function AdminLogin() {
       alert(`${isLogin ? "Login" : "Registration"} successful!`);
 
       if (isLogin) {
-        navigate("/AdminLogin/Admin");
+        navigate("/Admin");
       } else {
         setIsLogin(true);
         resetForm();
@@ -119,18 +127,20 @@ function AdminLogin() {
     }
   };
 
+  // FIXED: The reset function now clears all the correct state properties
   const resetForm = () => {
     setFormData({
-      name: "",
-      username: "",
+      first_name: "",
+      last_name: "",
       email: "",
       password: "",
       confirmPassword: "",
+      driving_licence: "",
     });
   };
 
   const switchMode = () => {
-    setIsLogin(!isLogin);
+    setIsLogin((prevIsLogin) => !prevIsLogin);
     resetForm();
   };
 
@@ -152,7 +162,7 @@ function AdminLogin() {
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name
+                  First Name
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -160,19 +170,18 @@ function AdminLogin() {
                   </span>
                   <input
                     type="text"
-                    name="name"
-                    value={formData.name}
+                    name="first_name"
+                    value={formData.first_name}
                     onChange={handleInputChange}
                     required={!isLogin}
                     className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg"
-                    placeholder="Enter your full name"
+                    placeholder="Enter your first name"
                   />
                 </div>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Username
+                  Last Name
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -180,16 +189,38 @@ function AdminLogin() {
                   </span>
                   <input
                     type="text"
-                    name="username"
-                    value={formData.username}
+                    name="last_name"
+                    value={formData.last_name}
                     onChange={handleInputChange}
                     required={!isLogin}
                     className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg"
-                    placeholder="Choose a username"
+                    placeholder="Enter your last name"
                   />
                 </div>
               </div>
             </>
+          )}
+
+          {!isLogin && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Driving Licence
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  <IdCard />
+                </span>
+                <input
+                  type="text"
+                  name="driving_licence"
+                  value={formData.driving_licence}
+                  onChange={handleInputChange}
+                  required={!isLogin}
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg"
+                  placeholder="Enter your driving licence number"
+                />
+              </div>
+            </div>
           )}
 
           <div>
@@ -249,14 +280,21 @@ function AdminLogin() {
                   <Lock />
                 </span>
                 <input
-                  type={showPassword ? "text" : "password"}
+                  type={showConfirmPassword ? "text" : "password"}
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
                   required={!isLogin}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg"
                   placeholder="••••••••"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                >
+                  {showConfirmPassword ? <EyeOff /> : <Eye />}
+                </button>
               </div>
             </div>
           )}

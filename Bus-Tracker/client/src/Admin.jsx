@@ -17,8 +17,20 @@ import {
   DollarSign,
   Users,
   Building,
+  Loader,
 } from "lucide-react";
 
+// ## Mapbox and Search Integration
+import dotenv from "dotenv";
+dotenv.config();
+import { SearchBox } from "@mapbox/search-js-react";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
+
+// IMPORTANT: Replace with your actual Mapbox access token
+const accessToken = process.env.VITE_MAPBOX_ACCESS_TOKEN;
+// "pk.eyJ1IjoibWVlcmFqNzMwYSIsImEiOiJjbWcwYWQ5cngwMnRzMmtzNjYza3ByaWc2In0.M7wxC5qPmnBQcVMDQoG3cA";
+console.log("Mapbox Access Token:", accessToken);
 // ## Main AdminPage Component
 export default function AdminPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024);
@@ -41,6 +53,9 @@ export default function AdminPage() {
       role: "Administrator",
     });
 
+    // Set mapbox access token globally for mapbox-gl instance
+    mapboxgl.accessToken = accessToken;
+
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -60,6 +75,8 @@ export default function AdminPage() {
     }, 1500);
   };
 
+  // FIXED: Moved variants inside the component to recalculate on each render.
+  // This ensures the layout is responsive to window size changes.
   const mainContentVariants = {
     open: {
       marginLeft: window.innerWidth >= 1024 ? "16rem" : "0",
@@ -128,6 +145,8 @@ const Sidebar = ({
     if (window.innerWidth < 1024) setIsOpen(false);
   };
 
+  const userInitial = user?.firstName?.charAt(0) || "A";
+
   return (
     <>
       <AnimatePresence>
@@ -176,8 +195,9 @@ const Sidebar = ({
                 <span>Logout</span>
               </button>
               <div className="flex items-center space-x-3 p-3 bg-slate-800 rounded-lg">
+                {/* IMPROVEMENT: User avatar now dynamically shows the user's initial */}
                 <img
-                  src={`https://placehold.co/40x40/a78bfa/ffffff?text=A`}
+                  src={`https://placehold.co/40x40/a78bfa/ffffff?text=${userInitial}`}
                   alt="Admin Avatar"
                   className="w-10 h-10 rounded-full"
                 />
@@ -259,12 +279,12 @@ const ManageRoutesView = ({ showNotification }) => {
     route_name: "Moonbeam to Howrah Station",
     start_location: {
       name: "Moonbeam",
-      address: "Moonbeam, Kolkata",
+      address: "Moonbeam, Kolkata, West Bengal 700156, India",
       coordinates: { latitude: 22.627116, longitude: 88.464429 },
     },
     end_location: {
       name: "Howrah Station",
-      address: "Howrah Station, Howrah",
+      address: "Howrah Station, Howrah, West Bengal, India",
       coordinates: { latitude: 22.5833, longitude: 88.3369 },
     },
     distance_km: 18.2,
@@ -292,6 +312,61 @@ const ManageRoutesView = ({ showNotification }) => {
 
   const [busData, setBusData] = useState(initialBusData);
   const [stops, setStops] = useState(initialBusData.stops);
+  const [isCalculating, setIsCalculating] = useState(false); // NEW: Loading state for calculation
+
+  // NEW: Effect to auto-calculate distance and time
+  useEffect(() => {
+    const calculateRouteDetails = async (startCoords, endCoords) => {
+      // Ensure we have valid coordinates for both start and end
+      if (
+        !startCoords?.latitude ||
+        !startCoords?.longitude ||
+        !endCoords?.latitude ||
+        !endCoords?.longitude
+      ) {
+        return;
+      }
+
+      setIsCalculating(true);
+      const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${startCoords.longitude},${startCoords.latitude};${endCoords.longitude},${endCoords.latitude}?geometries=geojson&access_token=${accessToken}`;
+
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.routes && data.routes.length > 0) {
+          const route = data.routes[0];
+          // Convert distance from meters to kilometers
+          const distanceInKm = (route.distance / 1000).toFixed(2);
+          // Convert duration from seconds to minutes
+          const durationInMinutes = Math.round(route.duration / 60);
+
+          setBusData((prev) => ({
+            ...prev,
+            distance_km: distanceInKm,
+            estimated_travel_time_minutes: durationInMinutes,
+          }));
+          showNotification("Route distance and time calculated!", "success");
+        } else {
+          throw new Error("No route found between the selected locations.");
+        }
+      } catch (error) {
+        console.error("Error calculating route:", error);
+        showNotification(
+          error.message || "Could not calculate route details.",
+          "error"
+        );
+      } finally {
+        setIsCalculating(false);
+      }
+    };
+
+    // Trigger calculation when either start or end location changes
+    calculateRouteDetails(
+      busData.start_location?.coordinates,
+      busData.end_location?.coordinates
+    );
+  }, [busData.start_location, busData.end_location, showNotification]);
 
   const handleInputChange = (e, path) => {
     const { name, value } = e.target;
@@ -309,14 +384,32 @@ const ManageRoutesView = ({ showNotification }) => {
     });
   };
 
+  const handleLocationDataChange = (path, locationData) => {
+    setBusData((prev) => {
+      const newBusData = { ...prev };
+      let pointer = newBusData;
+      const keys = path.split(".");
+      for (let i = 0; i < keys.length - 1; i++) {
+        pointer = pointer[keys[i]];
+      }
+      pointer[keys[keys.length - 1]] = locationData;
+      return newBusData;
+    });
+  };
+
   const handleStopChange = (index, field, value) => {
     const newStops = [...stops];
-    if (field.includes(".")) {
-      const [parent, child] = field.split(".");
-      newStops[index][parent][child] = value;
-    } else {
-      newStops[index][field] = value;
-    }
+    newStops[index][field] = value;
+    setStops(newStops);
+  };
+
+  const handleStopLocationChange = (index, locationData) => {
+    const newStops = [...stops];
+    newStops[index] = {
+      ...newStops[index],
+      name: locationData.name,
+      coordinates: locationData.coordinates,
+    };
     setStops(newStops);
   };
 
@@ -336,14 +429,35 @@ const ManageRoutesView = ({ showNotification }) => {
     setStops(stops.filter((_, i) => i !== index));
   };
 
-  const handleSave = () => {
+  const handleSaveRoute = async (event) => {
+    event.preventDefault();
     const finalBusData = {
       ...busData,
       stops,
       last_updated: new Date().toISOString(),
     };
     console.log("Saving Bus Data:", JSON.stringify(finalBusData, null, 2));
-    showNotification("Bus route data saved successfully!");
+
+    try {
+      const response = await fetch("http://localhost:5000/api/route", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(finalBusData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to save the route.");
+      }
+
+      showNotification("Route saved successfully!", "success");
+    } catch (error) {
+      console.error("Submission Error:", error);
+      showNotification(error.message, "error");
+    }
   };
 
   return (
@@ -351,7 +465,8 @@ const ManageRoutesView = ({ showNotification }) => {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Manage Bus Route</h2>
         <motion.button
-          onClick={handleSave}
+          type="submit"
+          onClick={handleSaveRoute}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg shadow-lg hover:bg-purple-700 transition-colors"
@@ -379,6 +494,13 @@ const ManageRoutesView = ({ showNotification }) => {
             />
           </Card>
           <Card title="Start Location" icon={<MapPin />}>
+            <LocationSearchInput
+              label="Search for Location"
+              onLocationSelect={(data) =>
+                handleLocationDataChange("start_location", data)
+              }
+              initialValue={busData.start_location.address}
+            />
             <Input
               label="Name"
               name="name"
@@ -391,26 +513,15 @@ const ManageRoutesView = ({ showNotification }) => {
               value={busData.start_location.address}
               onChange={(e) => handleInputChange(e, "start_location")}
             />
-            <Input
-              label="Latitude"
-              name="latitude"
-              value={busData.start_location.coordinates.latitude}
-              onChange={(e) =>
-                handleInputChange(e, "start_location.coordinates")
-              }
-              type="number"
-            />
-            <Input
-              label="Longitude"
-              name="longitude"
-              value={busData.start_location.coordinates.longitude}
-              onChange={(e) =>
-                handleInputChange(e, "start_location.coordinates")
-              }
-              type="number"
-            />
           </Card>
           <Card title="End Location" icon={<MapPin />}>
+            <LocationSearchInput
+              label="Search for Location"
+              onLocationSelect={(data) =>
+                handleLocationDataChange("end_location", data)
+              }
+              initialValue={busData.end_location.address}
+            />
             <Input
               label="Name"
               name="name"
@@ -423,39 +534,30 @@ const ManageRoutesView = ({ showNotification }) => {
               value={busData.end_location.address}
               onChange={(e) => handleInputChange(e, "end_location")}
             />
-            <Input
-              label="Latitude"
-              name="latitude"
-              value={busData.end_location.coordinates.latitude}
-              onChange={(e) => handleInputChange(e, "end_location.coordinates")}
-              type="number"
-            />
-            <Input
-              label="Longitude"
-              name="longitude"
-              value={busData.end_location.coordinates.longitude}
-              onChange={(e) => handleInputChange(e, "end_location.coordinates")}
-              type="number"
-            />
           </Card>
         </div>
 
         {/* Column 2 */}
         <div className="lg:col-span-1 space-y-6">
           <Card title="Timings & Operations" icon={<Clock />}>
-            <Input
+            {/* UPDATED: Using new InputWithStatus for auto-calculated fields */}
+            <InputWithStatus
               label="Distance (km)"
               name="distance_km"
               value={busData.distance_km}
-              onChange={handleInputChange}
               type="number"
+              readOnly={true}
+              isLoading={isCalculating}
+              statusText="Auto-calculated"
             />
-            <Input
+            <InputWithStatus
               label="Travel Time (mins)"
               name="estimated_travel_time_minutes"
               value={busData.estimated_travel_time_minutes}
-              onChange={handleInputChange}
               type="number"
+              readOnly={true}
+              isLoading={isCalculating}
+              statusText="Auto-calculated"
             />
             <Input
               label="Frequency (mins)"
@@ -570,6 +672,12 @@ const ManageRoutesView = ({ showNotification }) => {
                   <p className="font-semibold text-sm text-slate-600">
                     Stop {index + 1}
                   </p>
+                  <LocationSearchInput
+                    label="Search for Stop Location"
+                    onLocationSelect={(data) =>
+                      handleStopLocationChange(index, data)
+                    }
+                  />
                   <Input
                     label="Stop ID"
                     value={stop.stop_id}
@@ -589,30 +697,6 @@ const ManageRoutesView = ({ showNotification }) => {
                     value={stop.sequence}
                     onChange={(e) =>
                       handleStopChange(index, "sequence", e.target.value)
-                    }
-                    type="number"
-                  />
-                  <Input
-                    label="Latitude"
-                    value={stop.coordinates.latitude}
-                    onChange={(e) =>
-                      handleStopChange(
-                        index,
-                        "coordinates.latitude",
-                        e.target.value
-                      )
-                    }
-                    type="number"
-                  />
-                  <Input
-                    label="Longitude"
-                    value={stop.coordinates.longitude}
-                    onChange={(e) =>
-                      handleStopChange(
-                        index,
-                        "coordinates.longitude",
-                        e.target.value
-                      )
                     }
                     type="number"
                   />
@@ -665,6 +749,49 @@ const Input = ({ label, name, value, onChange, type = "text" }) => (
   </label>
 );
 
+// NEW: Component for inputs that can show a loading/status state
+const InputWithStatus = ({
+  label,
+  value,
+  type = "text",
+  readOnly,
+  isLoading,
+  statusText,
+}) => (
+  <label className="block">
+    <div className="flex justify-between items-center mb-1">
+      <span className="text-slate-600 font-medium text-sm">{label}</span>
+      {isLoading ? (
+        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          >
+            <Loader size={14} />
+          </motion.div>
+          <span>Calculating...</span>
+        </div>
+      ) : (
+        readOnly && (
+          <span className="text-xs text-purple-600 font-medium bg-purple-100 px-2 py-0.5 rounded-full">
+            {statusText}
+          </span>
+        )
+      )}
+    </div>
+    <input
+      type={type}
+      value={value}
+      readOnly={readOnly}
+      className={`w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 transition-shadow ${
+        readOnly ? "bg-slate-100 cursor-not-allowed" : ""
+      }`}
+      // A disabled input's onChange is not called, so we don't need it.
+      onChange={() => {}}
+    />
+  </label>
+);
+
 const PlaceholderView = ({ title, text }) => (
   <div className="bg-white p-8 rounded-xl shadow-lg flex flex-col items-center justify-center h-[calc(100vh-12rem)] text-center">
     <h2 className="text-3xl font-bold text-slate-800 mb-4">{title}</h2>
@@ -689,3 +816,51 @@ const Notification = ({ item }) => (
     )}
   </AnimatePresence>
 );
+
+// ## New Reusable Location Search Component
+const LocationSearchInput = ({
+  label,
+  onLocationSelect,
+  initialValue = "",
+}) => {
+  const [value, setValue] = useState(initialValue);
+
+  // Update internal state if the initial value prop changes
+  useEffect(() => {
+    setValue(initialValue);
+  }, [initialValue]);
+
+  const handleRetrieve = (res) => {
+    const feature = res.features[0];
+    if (feature) {
+      const locationData = {
+        name: feature.properties.name,
+        address: feature.properties.full_address,
+        coordinates: {
+          latitude: feature.geometry.coordinates[1],
+          longitude: feature.geometry.coordinates[0],
+        },
+      };
+      onLocationSelect(locationData);
+      setValue(feature.properties.full_address); // Update the input field text
+    }
+  };
+
+  return (
+    <label className="block">
+      <span className="text-slate-600 font-medium text-sm">{label}</span>
+      <div className="mt-1 [&>div]:w-full [&_input]:w-full [&_input]:p-3 [&_input]:border [&_input]:border-slate-300 [&_input]:rounded-lg [&_input]:focus:ring-2 [&_input]:focus:ring-purple-500 [&_input]:transition-shadow">
+        <SearchBox
+          accessToken={accessToken}
+          value={value}
+          onChange={(d) => setValue(d)}
+          onRetrieve={handleRetrieve}
+          options={{
+            language: "en",
+            country: "IN", // Biasing search results to India
+          }}
+        />
+      </div>
+    </label>
+  );
+};

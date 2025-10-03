@@ -1,16 +1,20 @@
 import mongoose from 'mongoose';
 
 const adminSchema = new mongoose.Schema({
-  name: {
+  first_name: {
     type: String,
     required: true,
     trim: true
   },
-  username: {
+  last_name: {
     type: String,
     required: true,
-    unique: true,
     trim: true
+  },
+  driving_licence: {
+    type: String,
+    require: true,
+    trim: true,
   },
   email: {
     type: String,
@@ -22,9 +26,9 @@ const adminSchema = new mongoose.Schema({
     type: String,
     required: true,
     minlength: 6
-  }
+  },
 }, {
   timestamps: true
 });
 
-export default mongoose.model('Admin', adminSchema);
+export default mongoose.model('Admins', adminSchema);
