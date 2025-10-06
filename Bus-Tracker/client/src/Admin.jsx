@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Menu,
@@ -21,16 +21,13 @@ import {
 } from "lucide-react";
 
 // ## Mapbox and Search Integration
-import dotenv from "dotenv";
-dotenv.config();
-import { SearchBox } from "@mapbox/search-js-react";
+// FIX: Removed `dotenv` import and config call, as it's incorrect for a client-side Vite app.
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 // IMPORTANT: Replace with your actual Mapbox access token
-const accessToken = process.env.VITE_MAPBOX_ACCESS_TOKEN;
-// "pk.eyJ1IjoibWVlcmFqNzMwYSIsImEiOiJjbWcwYWQ5cngwMnRzMmtzNjYza3ByaWc2In0.M7wxC5qPmnBQcVMDQoG3cA";
-console.log("Mapbox Access Token:", accessToken);
+const accessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || "";
+
 // ## Main AdminPage Component
 export default function AdminPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024);
@@ -60,12 +57,14 @@ export default function AdminPage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const showNotification = (message, type = "success") => {
+  // FIX: Wrapped showNotification in useCallback to prevent re-creation on every render.
+  // This avoids triggering useEffect hooks unnecessarily in child components.
+  const showNotification = useCallback((message, type = "success") => {
     setNotification({ message, type });
     setTimeout(() => {
       setNotification(null);
     }, 3000);
-  };
+  }, []);
 
   const handleLogout = () => {
     showNotification("You have been successfully logged out.");
@@ -75,8 +74,6 @@ export default function AdminPage() {
     }, 1500);
   };
 
-  // FIXED: Moved variants inside the component to recalculate on each render.
-  // This ensures the layout is responsive to window size changes.
   const mainContentVariants = {
     open: {
       marginLeft: window.innerWidth >= 1024 ? "16rem" : "0",
@@ -172,6 +169,8 @@ const Sidebar = ({
             </div>
             <nav className="flex flex-col space-y-2">
               {navItems.map((item) => (
+                // NOTE: For a real app with multiple pages, these should be <a> tags or <Link>
+                // components from a routing library for better accessibility and semantics.
                 <button
                   key={item.name}
                   className={`flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
@@ -195,7 +194,6 @@ const Sidebar = ({
                 <span>Logout</span>
               </button>
               <div className="flex items-center space-x-3 p-3 bg-slate-800 rounded-lg">
-                {/* IMPROVEMENT: User avatar now dynamically shows the user's initial */}
                 <img
                   src={`https://placehold.co/40x40/a78bfa/ffffff?text=${userInitial}`}
                   alt="Admin Avatar"
@@ -273,51 +271,41 @@ const DashboardContent = ({ activeTab, showNotification }) => (
 );
 
 // ## Bus Data Management View
+const defaultBusData = {
+  route_id: "",
+  route_name: "",
+  start_location: {
+    name: "",
+    address: "",
+    coordinates: { latitude: "", longitude: "" },
+  },
+  end_location: {
+    name: "",
+    address: "",
+    coordinates: { latitude: "", longitude: "" },
+  },
+  distance_km: "",
+  estimated_travel_time_minutes: "",
+  frequency_minutes: "",
+  operating_hours: { start_time: "", end_time: "" },
+  bus_type: "",
+  capacity: "",
+  fare: { standard: "", discounted: "", currency: "INR" },
+  stops: [],
+  accessibility_features: [],
+  operator: {
+    name: "",
+    contact: { phone: "", email: "" },
+  },
+  last_updated: "",
+};
+
 const ManageRoutesView = ({ showNotification }) => {
-  const initialBusData = {
-    route_id: "215",
-    route_name: "Moonbeam to Howrah Station",
-    start_location: {
-      name: "Moonbeam",
-      address: "Moonbeam, Kolkata, West Bengal 700156, India",
-      coordinates: { latitude: 22.627116, longitude: 88.464429 },
-    },
-    end_location: {
-      name: "Howrah Station",
-      address: "Howrah Station, Howrah, West Bengal, India",
-      coordinates: { latitude: 22.5833, longitude: 88.3369 },
-    },
-    distance_km: 18.2,
-    estimated_travel_time_minutes: 50,
-    frequency_minutes: 20,
-    operating_hours: { start_time: "05:30", end_time: "22:30" },
-    bus_type: "Standard Non-AC",
-    capacity: 50,
-    fare: { standard: 15.0, discounted: 5.0, currency: "INR" },
-    stops: [
-      {
-        stop_id: "S215_01",
-        name: "Akankha More",
-        sequence: 1,
-        coordinates: { latitude: 22.6186, longitude: 88.4632 },
-      },
-    ],
-    accessibility_features: ["Priority seating", "Audio announcements"],
-    operator: {
-      name: "West Bengal Transport Corporation",
-      contact: { phone: "+91-33-1234-5678", email: "info@wbtc.co.in" },
-    },
-    last_updated: new Date().toISOString(),
-  };
+  const [busData, setBusData] = useState(defaultBusData);
+  const [isCalculating, setIsCalculating] = useState(false);
 
-  const [busData, setBusData] = useState(initialBusData);
-  const [stops, setStops] = useState(initialBusData.stops);
-  const [isCalculating, setIsCalculating] = useState(false); // NEW: Loading state for calculation
-
-  // NEW: Effect to auto-calculate distance and time
   useEffect(() => {
     const calculateRouteDetails = async (startCoords, endCoords) => {
-      // Ensure we have valid coordinates for both start and end
       if (
         !startCoords?.latitude ||
         !startCoords?.longitude ||
@@ -334,11 +322,9 @@ const ManageRoutesView = ({ showNotification }) => {
         const response = await fetch(url);
         const data = await response.json();
 
-        if (data.routes && data.routes.length > 0) {
+        if (data.routes?.length > 0) {
           const route = data.routes[0];
-          // Convert distance from meters to kilometers
           const distanceInKm = (route.distance / 1000).toFixed(2);
-          // Convert duration from seconds to minutes
           const durationInMinutes = Math.round(route.duration / 60);
 
           setBusData((prev) => ({
@@ -361,12 +347,15 @@ const ManageRoutesView = ({ showNotification }) => {
       }
     };
 
-    // Trigger calculation when either start or end location changes
     calculateRouteDetails(
       busData.start_location?.coordinates,
       busData.end_location?.coordinates
     );
-  }, [busData.start_location, busData.end_location, showNotification]);
+  }, [
+    busData.start_location?.coordinates,
+    busData.end_location?.coordinates,
+    showNotification,
+  ]);
 
   const handleInputChange = (e, path) => {
     const { name, value } = e.target;
@@ -398,42 +387,49 @@ const ManageRoutesView = ({ showNotification }) => {
   };
 
   const handleStopChange = (index, field, value) => {
-    const newStops = [...stops];
-    newStops[index][field] = value;
-    setStops(newStops);
+    setBusData((prev) => {
+      const newStops = [...prev.stops];
+      newStops[index] = { ...newStops[index], [field]: value };
+      return { ...prev, stops: newStops };
+    });
   };
 
   const handleStopLocationChange = (index, locationData) => {
-    const newStops = [...stops];
-    newStops[index] = {
-      ...newStops[index],
-      name: locationData.name,
-      coordinates: locationData.coordinates,
-    };
-    setStops(newStops);
+    setBusData((prev) => {
+      const newStops = [...prev.stops];
+      newStops[index] = {
+        ...newStops[index],
+        name: locationData.name,
+        coordinates: locationData.coordinates,
+      };
+      return { ...prev, stops: newStops };
+    });
   };
 
   const addStop = () => {
-    setStops([
-      ...stops,
-      {
-        stop_id: "",
-        name: "",
-        sequence: stops.length + 1,
-        coordinates: { latitude: "", longitude: "" },
-      },
-    ]);
+    const newStop = {
+      stop_id: "",
+      name: "",
+      sequence: busData.stops.length + 1,
+      coordinates: { latitude: "", longitude: "" },
+    };
+    setBusData((prev) => ({
+      ...prev,
+      stops: [...prev.stops, newStop],
+    }));
   };
 
   const removeStop = (index) => {
-    setStops(stops.filter((_, i) => i !== index));
+    setBusData((prev) => ({
+      ...prev,
+      stops: prev.stops.filter((_, i) => i !== index),
+    }));
   };
 
   const handleSaveRoute = async (event) => {
     event.preventDefault();
     const finalBusData = {
       ...busData,
-      stops,
       last_updated: new Date().toISOString(),
     };
     console.log("Saving Bus Data:", JSON.stringify(finalBusData, null, 2));
@@ -505,13 +501,15 @@ const ManageRoutesView = ({ showNotification }) => {
               label="Name"
               name="name"
               value={busData.start_location.name}
-              onChange={(e) => handleInputChange(e, "start_location")}
+              readOnly={true}
+              onChange={() => {}}
             />
             <Input
               label="Address"
               name="address"
               value={busData.start_location.address}
-              onChange={(e) => handleInputChange(e, "start_location")}
+              readOnly={true}
+              onChange={() => {}}
             />
           </Card>
           <Card title="End Location" icon={<MapPin />}>
@@ -526,13 +524,15 @@ const ManageRoutesView = ({ showNotification }) => {
               label="Name"
               name="name"
               value={busData.end_location.name}
-              onChange={(e) => handleInputChange(e, "end_location")}
+              readOnly={true}
+              onChange={() => {}}
             />
             <Input
               label="Address"
               name="address"
               value={busData.end_location.address}
-              onChange={(e) => handleInputChange(e, "end_location")}
+              readOnly={true}
+              onChange={() => {}}
             />
           </Card>
         </div>
@@ -540,7 +540,6 @@ const ManageRoutesView = ({ showNotification }) => {
         {/* Column 2 */}
         <div className="lg:col-span-1 space-y-6">
           <Card title="Timings & Operations" icon={<Clock />}>
-            {/* UPDATED: Using new InputWithStatus for auto-calculated fields */}
             <InputWithStatus
               label="Distance (km)"
               name="distance_km"
@@ -658,7 +657,7 @@ const ManageRoutesView = ({ showNotification }) => {
         <div className="lg:col-span-1 space-y-6">
           <Card title="Stops" icon={<Bus />}>
             <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
-              {stops.map((stop, index) => (
+              {busData.stops.map((stop, index) => (
                 <div
                   key={index}
                   className="p-3 border border-slate-200 rounded-lg space-y-2 relative"
@@ -736,7 +735,14 @@ const Card = ({ title, icon, children }) => (
   </motion.div>
 );
 
-const Input = ({ label, name, value, onChange, type = "text" }) => (
+const Input = ({
+  label,
+  name,
+  value,
+  onChange,
+  type = "text",
+  readOnly = false,
+}) => (
   <label className="block">
     <span className="text-slate-600 font-medium text-sm">{label}</span>
     <input
@@ -744,12 +750,14 @@ const Input = ({ label, name, value, onChange, type = "text" }) => (
       name={name}
       value={value}
       onChange={onChange}
-      className="mt-1 w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 transition-shadow"
+      readOnly={readOnly}
+      className={`mt-1 w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 transition-shadow ${
+        readOnly ? "bg-slate-100 cursor-not-allowed" : ""
+      }`}
     />
   </label>
 );
 
-// NEW: Component for inputs that can show a loading/status state
 const InputWithStatus = ({
   label,
   value,
@@ -786,8 +794,7 @@ const InputWithStatus = ({
       className={`w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 transition-shadow ${
         readOnly ? "bg-slate-100 cursor-not-allowed" : ""
       }`}
-      // A disabled input's onChange is not called, so we don't need it.
-      onChange={() => {}}
+      onChange={() => {}} // A readOnly input does not need an onChange handler.
     />
   </label>
 );
@@ -817,50 +824,151 @@ const Notification = ({ item }) => (
   </AnimatePresence>
 );
 
-// ## New Reusable Location Search Component
 const LocationSearchInput = ({
   label,
   onLocationSelect,
   initialValue = "",
 }) => {
   const [value, setValue] = useState(initialValue);
+  const [suggestions, setSuggestions] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showList, setShowList] = useState(false);
+  const [highlightIndex, setHighlightIndex] = useState(-1);
+  const debounceRef = React.useRef(null);
+  const wrapperRef = React.useRef(null);
+  const inputRef = React.useRef(null);
 
-  // Update internal state if the initial value prop changes
   useEffect(() => {
     setValue(initialValue);
   }, [initialValue]);
 
-  const handleRetrieve = (res) => {
-    const feature = res.features[0];
-    if (feature) {
-      const locationData = {
-        name: feature.properties.name,
-        address: feature.properties.full_address,
-        coordinates: {
-          latitude: feature.geometry.coordinates[1],
-          longitude: feature.geometry.coordinates[0],
-        },
-      };
-      onLocationSelect(locationData);
-      setValue(feature.properties.full_address); // Update the input field text
+  useEffect(() => {
+    if (!value || value.trim().length === 0) {
+      setSuggestions([]);
+      setShowList(false);
+      return;
+    }
+
+    // Debounce requests
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const q = encodeURIComponent(value);
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${q}.json?access_token=${accessToken}&autocomplete=true&limit=6&country=IN`;
+        const res = await fetch(url);
+        const data = await res.json();
+        const features = Array.isArray(data.features) ? data.features : [];
+        const mapped = features.map((feature) => ({
+          id: feature.id || `${feature.geometry?.coordinates?.join(",")}`,
+          name: feature.text || feature.place_name || feature.id,
+          full_address: feature.place_name || feature.text || "",
+          coordinates: feature.geometry
+            ? {
+                latitude: feature.geometry.coordinates[1],
+                longitude: feature.geometry.coordinates[0],
+              }
+            : null,
+        }));
+        setSuggestions(mapped);
+        setHighlightIndex(-1);
+        setShowList(true);
+      } catch (err) {
+        console.error("Geocoding error:", err);
+        setSuggestions([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [value]);
+
+  const handleSelect = (item) => {
+    if (!item || !item.coordinates) return;
+    const locationData = {
+      name: item.name || "",
+      address: item.full_address || "",
+      coordinates: item.coordinates,
+    };
+    setValue(item.full_address || item.name || "");
+    setShowList(false);
+    setSuggestions([]);
+    setHighlightIndex(-1);
+    // blur input to remove focus state and hide mobile keyboards
+    inputRef.current?.blur();
+    onLocationSelect(locationData);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setShowList(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleKeyDown = (e) => {
+    if (!showList) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightIndex((i) => Math.min(i + 1, suggestions.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const sel = suggestions[highlightIndex >= 0 ? highlightIndex : 0];
+      if (sel) handleSelect(sel);
+    } else if (e.key === "Escape") {
+      setShowList(false);
     }
   };
 
   return (
-    <label className="block">
+    <label ref={wrapperRef} className="block relative">
       <span className="text-slate-600 font-medium text-sm">{label}</span>
-      <div className="mt-1 [&>div]:w-full [&_input]:w-full [&_input]:p-3 [&_input]:border [&_input]:border-slate-300 [&_input]:rounded-lg [&_input]:focus:ring-2 [&_input]:focus:ring-purple-500 [&_input]:transition-shadow">
-        <SearchBox
-          accessToken={accessToken}
-          value={value}
-          onChange={(d) => setValue(d)}
-          onRetrieve={handleRetrieve}
-          options={{
-            language: "en",
-            country: "IN", // Biasing search results to India
-          }}
-        />
-      </div>
+      <input
+        ref={inputRef}
+        className="mt-1 w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 transition-shadow"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onFocus={() => value && setShowList(true)}
+        onKeyDown={handleKeyDown}
+        placeholder="Search for a location"
+        aria-autocomplete="list"
+      />
+
+      {showList && (
+        <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-56 overflow-auto">
+          {isSearching && (
+            <div className="p-2 text-sm text-slate-500">Searching...</div>
+          )}
+          {!isSearching && suggestions.length === 0 && (
+            <div className="p-2 text-sm text-slate-500">No results</div>
+          )}
+          {!isSearching &&
+            suggestions.map((s, idx) => (
+              <button
+                key={s.id}
+                onClick={() => handleSelect(s)}
+                className={`w-full text-left p-2 hover:bg-slate-100 ${
+                  idx === highlightIndex ? "bg-slate-100" : ""
+                }`}
+              >
+                <div className="font-medium text-sm text-slate-700">
+                  {s.name}
+                </div>
+                <div className="text-xs text-slate-500">{s.full_address}</div>
+              </button>
+            ))}
+        </div>
+      )}
     </label>
   );
 };
